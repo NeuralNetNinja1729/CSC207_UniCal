@@ -27,6 +27,8 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
     private static final String PROPERTY = "property";
     private static final String TYPE = "type";
     private static final String TITLE = "title";
+    private static final String NOTION_API_VERSION = "2022-06-28";
+    private static final String NOTION_API_BASE_URL = "https://api.notion.com/v1";
     private final NotionCalendar calendar;
 
     public NotionCalendarDataAccessObject(NotionCalendar calendar) {
@@ -51,8 +53,8 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
         final ArrayList<Event> events = new ArrayList<>();
         try {
             // Prepare request details
-            final String notionApiKey = calendar.getNotionToken();
-            final String dbId = calendar.getDatabaseID();
+            final String notionApiKey = calendar.getCredentials();
+            final String dbId = calendar.getCalendarName();
             final HttpURLConnection connection = createConnection(notionApiKey, dbId);
 
             sendRequest(connection, requestData);
@@ -84,13 +86,13 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
     }
 
     private HttpURLConnection createConnection(String notionApiKey, String dbId) throws Exception {
-        final String urlString = "https://api.notion.com/v1/databases/" + dbId + "/query";
+        final String urlString = NOTION_API_BASE_URL + "/databases" + dbId + "/query";
         final URL url = new URL(urlString);
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Authorization", "Bearer " + notionApiKey);
-        connection.setRequestProperty("Notion-Version", "2022-06-28");
+        connection.setRequestProperty("Notion-Version", NOTION_API_VERSION);
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
 
@@ -104,10 +106,12 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
         final String endOfMonth = DateUtils.getEndOfMonth(date);
 
         final JSONObject filter = new JSONObject();
-        final JSONObject startDateFilter = new JSONObject().put(PROPERTY, DATE_PROPERTY_NAME)
+        final JSONObject startDateFilter = new JSONObject()
+                .put(PROPERTY, DATE_PROPERTY_NAME)
                 .put(DATE, new JSONObject().put("on_or_after", startOfMonth));
 
-        final JSONObject endDateFilter = new JSONObject().put(PROPERTY, DATE_PROPERTY_NAME)
+        final JSONObject endDateFilter = new JSONObject()
+                .put(PROPERTY, DATE_PROPERTY_NAME)
                 .put(DATE, new JSONObject().put("on_or_before", endOfMonth));
 
         filter.put("and", new JSONArray().put(startDateFilter).put(endDateFilter));
@@ -183,8 +187,8 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
         boolean result = false;
         try {
             // Get Notion API key and Database ID from the calendar object
-            final String notionApiKey = calendar.getNotionToken();
-            final String dbId = calendar.getDatabaseID();
+            final String notionApiKey = calendar.getCredentials();
+            final String dbId = calendar.getCalendarName();
 
             final JSONObject eventData = createAddEventRequestData(dbId, event);
 
@@ -255,13 +259,12 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
     }
 
     private HttpURLConnection createAddEventConnection(String notionApiKey) throws Exception {
-        final String urlString = "https://api.notion.com/v1/pages";
-        final URL url = new URL(urlString);
+        final URL url = new URL(NOTION_API_BASE_URL + "/pages");
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Authorization", "Bearer " + notionApiKey);
-        connection.setRequestProperty("Notion-Version", "2022-06-28");
+        connection.setRequestProperty("Notion-Version", NOTION_API_VERSION);
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
 
