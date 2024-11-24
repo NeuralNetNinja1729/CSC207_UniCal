@@ -1,37 +1,28 @@
 package entity;
 
 public class OutlookCalendar implements Calendar {
-    private String calendarName;
-    private String credentials;
-    private String accountName;
+    private final String calendarName;
+    private final String credentials;
+    private final String accountName;
 
     public OutlookCalendar(String calendarName, String credentials, String accountName) {
-        this.setCalendarName(calendarName);
-        this.setCredentials(credentials);
-        this.setAccountName(accountName);
+        this.calendarName = calendarName;
+        this.credentials = credentials;
+        this.accountName = accountName;
     }
 
+    @Override
     public String getCalendarName() {
         return calendarName;
     }
 
-    public void setCalendarName(String calendarName) {
-        this.calendarName = calendarName;
-    }
-
+    @Override
     public String getCredentials() {
         return credentials;
     }
 
-    public void setCredentials(String credentials) {
-        this.credentials = credentials;
-    }
-
+    @Override
     public String getAccountName() {
         return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
     }
 }
