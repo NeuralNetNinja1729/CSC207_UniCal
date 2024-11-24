@@ -1,49 +1,31 @@
 package entity;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
+/**
+ * Represents an event in the system.
+ */
 public class Event {
-    private String eventName;
-    private LocalDateTime eventTime;
-    private String eventLocation;
-    private String eventDescription;
 
-    public Event(String eventName, LocalDateTime eventTime, String eventLocation, String eventDescription) {
-        this.setEventName(eventName);
-        this.setEventTime(eventTime);
-        this.setEventLocation(eventLocation);
-        this.setEventDescription(eventDescription);
+    private final String eventName;
+    private final LocalDate date;
+    private final Calendar calendarApi;
+
+    public Event(String eventName, LocalDate date, Calendar calendarApi) {
+        this.eventName = eventName;
+        this.date = date;
+        this.calendarApi = calendarApi;
     }
 
     public String getEventName() {
         return eventName;
     }
 
-    public void setEventName(String eventName) {
-        this.eventName = eventName;
+    public LocalDate getDate() {
+        return date;
     }
 
-    public LocalDateTime getEventTime() {
-        return eventTime;
-    }
-
-    public void setEventTime(LocalDateTime eventTime) {
-        this.eventTime = eventTime;
-    }
-
-    public String getEventLocation() {
-        return eventLocation;
-    }
-
-    public void setEventLocation(String eventLocation) {
-        this.eventLocation = eventLocation;
-    }
-
-    public String getEventDescription() {
-        return eventDescription;
-    }
-
-    public void setEventDescription(String eventDescription) {
-        this.eventDescription = eventDescription;
+    public Calendar getCalendarApi() {
+        return calendarApi;
     }
 }

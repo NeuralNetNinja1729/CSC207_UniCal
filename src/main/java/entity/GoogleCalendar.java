@@ -1,5 +1,8 @@
 package entity;
 
+/**
+ * Represents a Google Calendar.
+ */
 public class GoogleCalendar implements Calendar {
     private final String calendarName;
     private final String credentials;
@@ -15,7 +18,7 @@ public class GoogleCalendar implements Calendar {
     public String getCalendarName() {
         return calendarName;
     }
-
+    
     @Override
     public String getCredentials() {
         return credentials;

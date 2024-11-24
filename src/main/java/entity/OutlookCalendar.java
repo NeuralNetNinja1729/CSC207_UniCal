@@ -1,5 +1,8 @@
 package entity;
 
+/**
+ * Represents an Outlook Calendar.
+ */
 public class OutlookCalendar implements Calendar {
     private final String calendarName;
     private final String credentials;
@@ -20,7 +23,7 @@ public class OutlookCalendar implements Calendar {
     public String getCredentials() {
         return credentials;
     }
-
+  
     @Override
     public String getAccountName() {
         return accountName;
