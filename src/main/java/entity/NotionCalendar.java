@@ -1,5 +1,8 @@
 package entity;
 
+/**
+ * Represents a Notion Calendar.
+ */
 public class NotionCalendar implements Calendar {
     private final String calendarName;
     private final String credentials;
