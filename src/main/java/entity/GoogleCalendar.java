@@ -1,14 +1,19 @@
 package entity;
 
+import java.util.List;
+import java.util.ArrayList;
+
 public class GoogleCalendar implements Calendar {
     private String calendarName;
     private String credentials;
     private String accountName;
+    private List<Event> events;
 
     public GoogleCalendar(String calendarName, String credentials, String accountName) {
-        this.setCalendarName(calendarName);
-        this.setCredentials(credentials);
-        this.setAccountName(accountName);
+        this.calendarName = calendarName;
+        this.credentials = credentials;
+        this.accountName = accountName;
+        this.events = new ArrayList<>();
     }
 
     public String getCalendarName() {
@@ -33,5 +38,14 @@ public class GoogleCalendar implements Calendar {
 
     public void setAccountName(String accountName) {
         this.accountName = accountName;
+    }
+
+    public List<Event> getEvents() {
+        return events;
+    }
+
+    @Override
+    public void addEvent(Event event) {
+        events.add(event);
     }
 }
