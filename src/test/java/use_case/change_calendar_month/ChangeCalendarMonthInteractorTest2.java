@@ -25,10 +25,10 @@ public class ChangeCalendarMonthInteractorTest2 {
   @Test
   public void testFetchEventsMonth() throws Exception {
     ArrayList<Calendar> calendars = new ArrayList<>();
-    String credentials = new String(Files.readAllBytes(Paths.get("src/main/resources/credentials.json")));
+    String credentials = new String(Files.readAllBytes(Paths.get("src/main/resources/unical-442813-e8345d894d68.json")));
     Calendar google = new GoogleCalendar(
       credentials,
-      "unical.207.test@gmail.com",
+      "calendar-service@unical-442813.iam.gserviceaccount.com",
       "UniCal",
       "primary"
     );
