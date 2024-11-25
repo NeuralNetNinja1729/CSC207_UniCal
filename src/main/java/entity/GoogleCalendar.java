@@ -4,27 +4,30 @@ package entity;
  * Represents a Google Calendar.
  */
 public class GoogleCalendar implements Calendar {
-    private final String calendarName;
     private final String credentials;
     private final String accountName;
+    private final String calendarName;
 
-    public GoogleCalendar(String calendarName, String credentials, String accountName) {
-        this.calendarName = calendarName;
+    public GoogleCalendar(String credentials, String accountName, String calendarName) {
         this.credentials = credentials;
         this.accountName = accountName;
+        this.calendarName = calendarName;
+    }
+
+    @Override
+    public String getCalendarApiName() {
+        return "GoogleCalendar";
     }
 
     @Override
     public String getCalendarName() {
         return calendarName;
     }
-    
-    @Override
+
     public String getCredentials() {
         return credentials;
     }
 
-    @Override
     public String getAccountName() {
         return accountName;
     }
