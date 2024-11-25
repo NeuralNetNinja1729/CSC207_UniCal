@@ -4,14 +4,19 @@ package entity;
  * Represents a Notion Calendar.
  */
 public class NotionCalendar implements Calendar {
+    private final String notionToken;
+    private final String databaseID;
     private final String calendarName;
-    private final String credentials;
-    private final String accountName;
 
-    public NotionCalendar(String calendarName, String credentials, String accountName) {
+    public NotionCalendar(String notionToken, String databaseID, String calendarName) {
+        this.notionToken = notionToken;
+        this.databaseID = databaseID;
         this.calendarName = calendarName;
-        this.credentials = credentials;
-        this.accountName = accountName;
+    }
+
+    @Override
+    public String getCalendarApiName() {
+        return "NotionCalendar";
     }
 
     @Override
@@ -19,13 +24,11 @@ public class NotionCalendar implements Calendar {
         return calendarName;
     }
 
-    @Override
-    public String getCredentials() {
-        return credentials;
+    public String getNotionToken() {
+        return notionToken;
     }
 
-    @Override
-    public String getAccountName() {
-        return accountName;
+    public String getDatabaseID() {
+        return databaseID;
     }
 }

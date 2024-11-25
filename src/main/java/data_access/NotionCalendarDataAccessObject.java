@@ -53,8 +53,8 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
         final ArrayList<Event> events = new ArrayList<>();
         try {
             // Prepare request details
-            final String notionApiKey = calendar.getCredentials();
-            final String dbId = calendar.getCalendarName();
+            final String notionApiKey = calendar.getNotionToken();
+            final String dbId = calendar.getDatabaseID();
             final HttpURLConnection connection = createConnection(notionApiKey, dbId);
 
             sendRequest(connection, requestData);
@@ -187,8 +187,8 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
         boolean result = false;
         try {
             // Get Notion API key and Database ID from the calendar object
-            final String notionApiKey = calendar.getCredentials();
-            final String dbId = calendar.getCalendarName();
+            final String notionApiKey = calendar.getNotionToken();
+            final String dbId = calendar.getDatabaseID();
 
             final JSONObject eventData = createAddEventRequestData(dbId, event);
 
