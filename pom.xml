@@ -33,6 +33,50 @@
             <version>5.8.1</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>com.google.apis</groupId>
+          <artifactId>google-api-services-calendar</artifactId>
+          <version>v3-rev20220715-2.0.0</version>
+        </dependency>
+        <dependency>
+          <groupId>com.google.api-client</groupId>
+          <artifactId>google-api-client</artifactId>
+          <version>2.0.0</version>
+        </dependency>
+
+      <dependency>
+        <groupId>com.microsoft.graph</groupId>
+        <artifactId>microsoft-graph</artifactId>
+        <version>5.65.0</version>
+      </dependency>
+
+      <!-- Azure Identity for authentication -->
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-identity</artifactId>
+        <version>1.8.1</version>
+      </dependency>
+
+      <!-- MSAL for Microsoft authentication -->
+<!--      <dependency>-->
+<!--        <groupId>com.microsoft.identity.client</groupId>-->
+<!--        <artifactId>msal4j</artifactId>-->
+<!--        <version>1.13.5</version>-->
+<!--      </dependency>-->
+
+      <!-- Jackson for JSON processing -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>2.13.4</version>
+      </dependency>
+
+      <!-- SLF4J logging -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>1.7.32</version>
+      </dependency>
 
     </dependencies>
 
