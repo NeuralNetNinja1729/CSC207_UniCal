@@ -4,24 +4,21 @@ import entity.Calendar;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthController;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthState;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthViewModel;
-import interface_adapter.login.LoginState;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.Year;
+import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
-public class ChangeCalendarMonthView extends JPanel implements ActionListener, PropertyChangeListener {
+public class ChangeCalendarMonthView extends JPanel {
+
     private JFrame frame;
     private JPanel calendarPanel;
     private JButton googleButton;
@@ -31,14 +28,11 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
     private JComboBox<Integer> yearSelector;
 
     private final String viewName = "calendar month";
-    private ChangeCalendarMonthController changeCalendarMonthController;
-    private ChangeCalendarMonthState changeCalendarMonthState;
-    private ChangeCalendarMonthViewModel changeCalendarMonthViewModel;
+    private final ChangeCalendarMonthViewModel viewModel;
+    private ChangeCalendarMonthController controller;
 
-
-    public ChangeCalendarMonthView(ChangeCalendarMonthViewModel changeCalendarMonthViewModel) {
-        this.changeCalendarMonthViewModel = changeCalendarMonthViewModel;
-        this.changeCalendarMonthViewModel.addPropertyChangeListener(this);
+    public ChangeCalendarMonthView(ChangeCalendarMonthViewModel viewModel) {
+        this.viewModel = viewModel;
 
         // Create the frame
         this.frame = new JFrame("UniCal");
@@ -58,71 +52,9 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
         JButton addEventButton = new JButton("Add Event");
         JButton logoutButton = new JButton("Logout");
 
-        googleButton.addActionListener(
-                // This creates an anonymous subclass of ActionListener and instantiates it.
-                new ActionListener() {
-                    public void actionPerformed(ActionEvent evt) {
-                        if (evt.getSource().equals(googleButton)) {
-                            final ChangeCalendarMonthState currentState = new ChangeCalendarMonthState();
-                            List<Calendar> calList = new ArrayList<>();
-                            calList.add(currentState.getGoogleCalendar());
-                            currentState.setCurrCalendarList(calList);
-                            Month selectedMonth = (Month) monthSelector.getSelectedItem();
-                            Integer selectedYear = (Integer) yearSelector.getSelectedItem();
-                            String monthName = selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault());
-                            currentState.setCurrMonth(monthName);
-                            currentState.setCurrYear(selectedYear);
-                            changeCalendarMonthController.execute(currentState.getCurrCalendarList(),
-                                    currentState.getCurrMonth(), currentState.getCurrYear());
-                        }
-                    }
-                }
-        );
-
-
-
-        outlookButton.addActionListener(
-                // This creates an anonymous subclass of ActionListener and instantiates it.
-                new ActionListener() {
-                    public void actionPerformed(ActionEvent evt) {
-                        if (evt.getSource().equals(outlookButton)) {
-                            final ChangeCalendarMonthState currentState = new ChangeCalendarMonthState();
-                            List<Calendar> calList = new ArrayList<>();
-                            calList.add(currentState.getOutlookCalendar());
-                            currentState.setCurrCalendarList(calList);
-                            Month selectedMonth = (Month) monthSelector.getSelectedItem();
-                            Integer selectedYear = (Integer) yearSelector.getSelectedItem();
-                            String monthName = selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault());
-                            currentState.setCurrMonth(monthName);
-                            currentState.setCurrYear(selectedYear);
-                            changeCalendarMonthController.execute(currentState.getCurrCalendarList(),
-                                    currentState.getCurrMonth(), currentState.getCurrYear());
-                        }
-                    }
-                }
-        );
-
-
-        notionButton.addActionListener(
-                // This creates an anonymous subclass of ActionListener and instantiates it.
-                new ActionListener() {
-                    public void actionPerformed(ActionEvent evt) {
-                        if (evt.getSource().equals(notionButton)) {
-                            final ChangeCalendarMonthState currentState = new ChangeCalendarMonthState();
-                            List<Calendar> calList = new ArrayList<>();
-                            calList.add(currentState.getNotionCalendar());
-                            currentState.setCurrCalendarList(calList);
-                            Month selectedMonth = (Month) monthSelector.getSelectedItem();
-                            Integer selectedYear = (Integer) yearSelector.getSelectedItem();
-                            String monthName = selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault());
-                            currentState.setCurrMonth(monthName);
-                            currentState.setCurrYear(selectedYear);
-                            changeCalendarMonthController.execute(currentState.getCurrCalendarList(),
-                                    currentState.getCurrMonth(), currentState.getCurrYear());
-                        }
-                    }
-                }
-        );
+        googleButton.addActionListener(evt -> handleCalendarSelection("Google"));
+        outlookButton.addActionListener(evt -> handleCalendarSelection("Outlook"));
+        notionButton.addActionListener(evt -> handleCalendarSelection("Notion"));
 
         sidePanel.add(googleButton);
         sidePanel.add(outlookButton);
@@ -142,8 +74,8 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
             yearSelector.addItem(year);
         }
 
-        monthSelector.addActionListener(e -> updateCalendarView());
-        yearSelector.addActionListener(e -> updateCalendarView());
+        monthSelector.addActionListener(e -> updateCalendar());
+        yearSelector.addActionListener(e -> updateCalendar());
 
         topPanel.add(new JLabel("Month:"));
         topPanel.add(monthSelector);
@@ -159,25 +91,51 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
         frame.add(calendarPanel, BorderLayout.CENTER);
 
         // Initialize the calendar view
-        updateCalendarView();
+        updateCalendar();
 
         // Make the frame visible
         frame.setVisible(true);
     }
 
-    public void actionPerformed(ActionEvent evt) {
-        System.out.println("Click " + evt.getActionCommand());
+    public void setController(ChangeCalendarMonthController controller) {
+        this.controller = controller;
     }
 
+    private void handleCalendarSelection(String calendarType) {
+        ChangeCalendarMonthState state = viewModel.getState();
 
-    // Update the calendar view based on the selected month and year
-    private void updateCalendarView() {
+        switch (calendarType) {
+            case "Google":
+                state.setCurrCalendarList(List.of(state.getGoogleCalendar()));
+                break;
+            case "Outlook":
+                state.setCurrCalendarList(List.of(state.getOutlookCalendar()));
+                break;
+            case "Notion":
+                state.setCurrCalendarList(List.of(state.getNotionCalendar()));
+                break;
+        }
+
+        Month selectedMonth = (Month) monthSelector.getSelectedItem();
+        Integer selectedYear = (Integer) yearSelector.getSelectedItem();
+        state.setCurrMonth(selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault()));
+        state.setCurrYear(selectedYear);
+
+        controller.execute(state.getCurrCalendarList(), state.getCurrMonth(), state.getCurrYear());
+    }
+
+    private void updateCalendar() {
         calendarPanel.removeAll();
 
-        // List to ensure days are ordered from Sunday to Saturday
-        java.util.List<DayOfWeek> daysOfWeek = List.of(DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY);
+        // Retrieve events from the state
+        ChangeCalendarMonthState state = viewModel.getState();
+        Map<String, String> eventsByDate = state.getEventMap();
 
-        // Add day labels to the first row of the calendar panel
+        // List of days from Sunday to Saturday
+        List<DayOfWeek> daysOfWeek = List.of(DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+                DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY);
+
+        // Add day labels
         for (DayOfWeek day : daysOfWeek) {
             JLabel dayLabel = new JLabel(day.getDisplayName(TextStyle.SHORT, Locale.getDefault()), SwingConstants.CENTER);
             dayLabel.setFont(new Font("Arial", Font.BOLD, 14));
@@ -185,64 +143,51 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
             calendarPanel.add(dayLabel);
         }
 
+        // Fetch the selected month and year
         Month selectedMonth = (Month) monthSelector.getSelectedItem();
         Integer selectedYear = (Integer) yearSelector.getSelectedItem();
 
+        // Calculate days in the month and the starting day of the week
         LocalDate firstDayOfMonth = LocalDate.of(selectedYear, selectedMonth, 1);
-        int firstDayOfWeek = firstDayOfMonth.getDayOfWeek().getValue();
+        int firstDayOfWeek = firstDayOfMonth.getDayOfWeek().getValue(); // Monday = 1
         int daysInMonth = selectedMonth.length(Year.isLeap(selectedYear));
 
-        // Adjust for Sunday being the first day of the week
+        // Adjust first day for Sunday start
         int adjustedFirstDayOfWeek = (firstDayOfWeek == 7) ? 0 : firstDayOfWeek;
 
-        // Fill in the empty cells before the first day of the month
+        // Fill empty cells before the first day
         for (int i = 0; i < adjustedFirstDayOfWeek; i++) {
             calendarPanel.add(new JLabel(""));
         }
 
-        // Fill in the days of the month
+        // Fill in the days of the month with events
         for (int day = 1; day <= daysInMonth; day++) {
+            LocalDate currentDate = LocalDate.of(selectedYear, selectedMonth, day);
+            String formattedDate = currentDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+            // Create a panel for the day
+            JPanel dayPanel = new JPanel(new BorderLayout());
+            dayPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+
+            // Add the day number
             JLabel dayLabel = new JLabel(String.valueOf(day), SwingConstants.CENTER);
-            dayLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            calendarPanel.add(dayLabel);
+            dayPanel.add(dayLabel, BorderLayout.NORTH);
+
+            // Check if there are events for this day
+            if (eventsByDate.containsKey(formattedDate)) {
+                JTextArea eventTextArea = new JTextArea(eventsByDate.get(formattedDate));
+                eventTextArea.setEditable(false);
+                eventTextArea.setLineWrap(true);
+                eventTextArea.setWrapStyleWord(true);
+
+                dayPanel.add(new JScrollPane(eventTextArea), BorderLayout.CENTER);
+            }
+
+            calendarPanel.add(dayPanel);
         }
 
         // Refresh the calendar panel
         calendarPanel.revalidate();
         calendarPanel.repaint();
-        // at this point, we could again call the use case so that changing the month and year
-        // automatically refreshes the events
-    }
-
-    public ChangeCalendarMonthController getChangeCalendarMonthController() {
-        return changeCalendarMonthController;
-    }
-
-    public void setChangeCalendarMonthController(ChangeCalendarMonthController changeCalendarMonthController) {
-        this.changeCalendarMonthController = changeCalendarMonthController;
-    }
-
-    public String getViewName() {
-        return viewName;
-    }
-
-
-        public String getName() {
-            return this.viewName;
-        }
-
-    /**
-     * This method gets called when a bound property is changed.
-     *
-     * @param evt A PropertyChangeEvent object describing the event source
-     *            and the property that has changed.
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        final ChangeCalendarMonthState currentState = (ChangeCalendarMonthState) evt.getSource();
-        setFields(currentState);
-    }
-
-    private void setFields(ChangeCalendarMonthState state) {
     }
 }

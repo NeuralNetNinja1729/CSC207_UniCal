@@ -2,8 +2,11 @@ package interface_adapter.change_calendar_month;
 
 import entity.Calendar;
 import entity.User;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class ChangeCalendarMonthState {
     private User currentUser;
@@ -11,6 +14,7 @@ public class ChangeCalendarMonthState {
     private Calendar notionCalendar;
     private Calendar outlookCalendar;
     private List<Calendar> currCalendarList = new ArrayList<>();
+    private Map<String, String> eventMap = new HashMap<>();
     private String currMonth;
     private Integer currYear;
 
@@ -25,6 +29,14 @@ public class ChangeCalendarMonthState {
 
     public void addCalendar(Calendar calendar) {
         this.currCalendarList.add(calendar);
+    }
+
+    public Map<String, String> getEventMap() {
+        return eventMap;
+    }
+
+    public void setEventMap(Map<String, String> eventMap) {
+        this.eventMap = eventMap;
     }
 
     public String getCurrMonth() {
