@@ -1,5 +1,6 @@
 package interface_adapter.change_calendar_month;
 
+import entity.Event;
 import use_case.change_calendar_month.ChangeCalendarMonthOutputBoundary;
 import use_case.change_calendar_month.ChangeCalendarMonthOutputData;
 
@@ -14,7 +15,9 @@ public class ChangeCalendarMonthPresenter implements ChangeCalendarMonthOutputBo
 
     @Override
     public void prepareSuccessView(ChangeCalendarMonthOutputData outputData) {
-        // TODO
+        for (Event e : outputData.getEventList()) {
+            System.out.println(e.getEventName());
+        } // this is temporary, just to check that the use-case backend works
     }
 
 }

@@ -7,6 +7,7 @@ import entity.Event;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthPresenter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The Change Month Calendar Interactor.
@@ -25,9 +26,9 @@ public class ChangeCalendarMonthInteractor implements ChangeCalendarMonthInputBo
     @Override
     public void execute(ChangeCalendarMonthInputData inputData) {
 
-        final ArrayList<Event> events = new ArrayList<>();
+        final List<Event> events = new ArrayList<>();
 
-        final ArrayList<Calendar> calendars = inputData.getCalendarList();
+        final List<Calendar> calendars = inputData.getCalendarList();
         for (int i = 0; i < calendars.size(); i++) {
 
             final GetEventsDataAccessInterface getEventsDataAccessObject =

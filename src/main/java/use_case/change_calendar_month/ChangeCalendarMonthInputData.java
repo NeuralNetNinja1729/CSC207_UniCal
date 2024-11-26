@@ -4,21 +4,22 @@ import entity.Calendar;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Input data for changing the calendar by month.
  */
 public class ChangeCalendarMonthInputData {
 
-    private final ArrayList<Calendar> calendarList;
+    private final List<Calendar> calendarList;
     private final LocalDate date;
 
-    public ChangeCalendarMonthInputData(ArrayList<Calendar> calendarList, String date) {
+    public ChangeCalendarMonthInputData(List<Calendar> calendarList, String date) {
         this.calendarList = calendarList;
         this.date = LocalDate.parse(date);
     }
 
-    public ArrayList<Calendar> getCalendarList() {
+    public List<Calendar> getCalendarList() {
         return calendarList;
     }
 

@@ -2,11 +2,16 @@ package view;
 
 import entity.Calendar;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthController;
+import interface_adapter.change_calendar_month.ChangeCalendarMonthState;
+import interface_adapter.change_calendar_month.ChangeCalendarMonthViewModel;
+import interface_adapter.login.LoginState;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
@@ -16,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class ChangeCalendarMonthView extends JPanel implements ActionListener {
+public class ChangeCalendarMonthView extends JPanel implements ActionListener, PropertyChangeListener {
     private JFrame frame;
     private JPanel calendarPanel;
     private JButton googleButton;
@@ -24,20 +29,16 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener {
     private JButton notionButton;
     private JComboBox<Month> monthSelector;
     private JComboBox<Integer> yearSelector;
-    private User currentUser;
-    private Calendar googleCalendar;
-    private Calendar notionCalendar;
-    private Calendar outlookCalendar;
+
+    private final String viewName = "calendar month";
     private ChangeCalendarMonthController changeCalendarMonthController;
+    private ChangeCalendarMonthState changeCalendarMonthState;
+    private ChangeCalendarMonthViewModel changeCalendarMonthViewModel;
 
 
-    public ChangeCalendarMonthView(User currentUser, Calendar googleCalendar, Calendar notionCalendar,
-                                   Calendar outlookCalendar,
-                                   ChangeCalendarMonthController changeCalendarMonthController) {
-        this.setCurrentUser(currentUser);
-        this.setGoogleCalendar(googleCalendar);
-        this.setNotionCalendar(notionCalendar);
-        this.setOutlookCalendar(outlookCalendar);
+    public ChangeCalendarMonthView(ChangeCalendarMonthViewModel changeCalendarMonthViewModel) {
+        this.changeCalendarMonthViewModel = changeCalendarMonthViewModel;
+        this.changeCalendarMonthViewModel.addPropertyChangeListener(this);
 
         // Create the frame
         this.frame = new JFrame("UniCal");
@@ -62,12 +63,17 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener {
                 new ActionListener() {
                     public void actionPerformed(ActionEvent evt) {
                         if (evt.getSource().equals(googleButton)) {
-                            ArrayList<Calendar> calList = new ArrayList<>();
-                            calList.add(googleCalendar);
+                            final ChangeCalendarMonthState currentState = new ChangeCalendarMonthState();
+                            List<Calendar> calList = new ArrayList<>();
+                            calList.add(currentState.getGoogleCalendar());
+                            currentState.setCurrCalendarList(calList);
                             Month selectedMonth = (Month) monthSelector.getSelectedItem();
                             Integer selectedYear = (Integer) yearSelector.getSelectedItem();
                             String monthName = selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault());
-                            changeCalendarMonthController.execute(calList, monthName, selectedYear);
+                            currentState.setCurrMonth(monthName);
+                            currentState.setCurrYear(selectedYear);
+                            changeCalendarMonthController.execute(currentState.getCurrCalendarList(),
+                                    currentState.getCurrMonth(), currentState.getCurrYear());
                         }
                     }
                 }
@@ -80,12 +86,17 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener {
                 new ActionListener() {
                     public void actionPerformed(ActionEvent evt) {
                         if (evt.getSource().equals(outlookButton)) {
-                            ArrayList<Calendar> calList = new ArrayList<>();
-                            calList.add(outlookCalendar);
+                            final ChangeCalendarMonthState currentState = new ChangeCalendarMonthState();
+                            List<Calendar> calList = new ArrayList<>();
+                            calList.add(currentState.getOutlookCalendar());
+                            currentState.setCurrCalendarList(calList);
                             Month selectedMonth = (Month) monthSelector.getSelectedItem();
                             Integer selectedYear = (Integer) yearSelector.getSelectedItem();
                             String monthName = selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault());
-                            changeCalendarMonthController.execute(calList, monthName, selectedYear);
+                            currentState.setCurrMonth(monthName);
+                            currentState.setCurrYear(selectedYear);
+                            changeCalendarMonthController.execute(currentState.getCurrCalendarList(),
+                                    currentState.getCurrMonth(), currentState.getCurrYear());
                         }
                     }
                 }
@@ -97,12 +108,17 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener {
                 new ActionListener() {
                     public void actionPerformed(ActionEvent evt) {
                         if (evt.getSource().equals(notionButton)) {
-                            ArrayList<Calendar> calList = new ArrayList<>();
-                            calList.add(notionCalendar);
+                            final ChangeCalendarMonthState currentState = new ChangeCalendarMonthState();
+                            List<Calendar> calList = new ArrayList<>();
+                            calList.add(currentState.getNotionCalendar());
+                            currentState.setCurrCalendarList(calList);
                             Month selectedMonth = (Month) monthSelector.getSelectedItem();
                             Integer selectedYear = (Integer) yearSelector.getSelectedItem();
                             String monthName = selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault());
-                            changeCalendarMonthController.execute(calList, monthName, selectedYear);
+                            currentState.setCurrMonth(monthName);
+                            currentState.setCurrYear(selectedYear);
+                            changeCalendarMonthController.execute(currentState.getCurrCalendarList(),
+                                    currentState.getCurrMonth(), currentState.getCurrYear());
                         }
                     }
                 }
@@ -198,30 +214,6 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener {
         // automatically refreshes the events
     }
 
-    public Calendar getGoogleCalendar() {
-        return googleCalendar;
-    }
-
-    public void setGoogleCalendar(Calendar googleCalendar) {
-        this.googleCalendar = googleCalendar;
-    }
-
-    public Calendar getNotionCalendar() {
-        return notionCalendar;
-    }
-
-    public void setNotionCalendar(Calendar notionCalendar) {
-        this.notionCalendar = notionCalendar;
-    }
-
-    public Calendar getOutlookCalendar() {
-        return outlookCalendar;
-    }
-
-    public void setOutlookCalendar(Calendar outlookCalendar) {
-        this.outlookCalendar = outlookCalendar;
-    }
-
     public ChangeCalendarMonthController getChangeCalendarMonthController() {
         return changeCalendarMonthController;
     }
@@ -230,24 +222,27 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener {
         this.changeCalendarMonthController = changeCalendarMonthController;
     }
 
-    public User getCurrentUser() {
-        return currentUser;
+    public String getViewName() {
+        return viewName;
     }
 
-    public void setCurrentUser(User currentUser) {
-        this.currentUser = currentUser;
-    }
-
-    // Simple User class for demonstration purposes
-    static class User {
-        private String name;
-
-        public User(String name) {
-            this.name = name;
-        }
 
         public String getName() {
-            return name;
+            return this.viewName;
         }
+
+    /**
+     * This method gets called when a bound property is changed.
+     *
+     * @param evt A PropertyChangeEvent object describing the event source
+     *            and the property that has changed.
+     */
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        final ChangeCalendarMonthState currentState = (ChangeCalendarMonthState) evt.getSource();
+        setFields(currentState);
+    }
+
+    private void setFields(ChangeCalendarMonthState state) {
     }
 }
