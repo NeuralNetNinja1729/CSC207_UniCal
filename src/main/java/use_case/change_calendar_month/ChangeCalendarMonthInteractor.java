@@ -44,3 +44,4 @@ public class ChangeCalendarMonthInteractor implements ChangeCalendarMonthInputBo
         this.changeCalendarMonthPresenter.prepareSuccessView(changeCalendarMonthOutputData);
     }
 }
+

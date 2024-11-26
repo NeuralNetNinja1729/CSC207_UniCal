@@ -8,3 +8,4 @@ public class ChangeCalendarMonthViewModel extends ViewModel<ChangeCalendarMonthS
         setState(new ChangeCalendarMonthState());
     }
 }
+
