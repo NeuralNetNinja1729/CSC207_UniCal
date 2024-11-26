@@ -11,3 +11,4 @@ public interface ChangeCalendarMonthOutputBoundary {
     void prepareSuccessView(ChangeCalendarMonthOutputData outputData);
 
 }
+
