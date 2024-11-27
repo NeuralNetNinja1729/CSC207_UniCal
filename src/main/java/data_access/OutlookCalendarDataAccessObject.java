@@ -2,6 +2,7 @@ package data_access;
 
 import com.microsoft.graph.core.ClientException;
 import com.microsoft.graph.models.Event;
+import com.microsoft.graph.options.QueryOption;
 import com.microsoft.graph.requests.GraphServiceClient;
 import entity.OutlookCalendar;
 import okhttp3.Request;
@@ -10,7 +11,10 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 public class OutlookCalendarDataAccessObject implements GetEventsDataAccessInterface, AddEventDataAccessInterface {
   private static final String APPLICATION_NAME = "UniCal";
@@ -50,20 +54,29 @@ public class OutlookCalendarDataAccessObject implements GetEventsDataAccessInter
     ArrayList<entity.Event> events = new ArrayList<>();
 
     try {
+      // Format dates for the API
+      DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+      String startTime = start.format(formatter);
+      String endTime = end.format(formatter);
+
+      // Create query options
+      List<QueryOption> requestOptions = new LinkedList<>();
+      requestOptions.add(new QueryOption("startDateTime", startTime));
+      requestOptions.add(new QueryOption("endDateTime", endTime));
+
       // Query events using Microsoft Graph API
       graphClient.users(calendar.getAccountName())
         .calendar()
         .calendarView()
-        .buildRequest()
+        .buildRequest(requestOptions)
         .select("subject,start,end")
-        .filter(String.format("start/dateTime ge '%s' and end/dateTime le '%s'",
-          start.toString(), end.toString()))
         .get()
         .getCurrentPage()
         .forEach(event -> parseEvent(event, events));
 
     } catch (ClientException e) {
       System.err.println("Error fetching events: " + e.getMessage());
+      e.printStackTrace();
     }
 
     return events;
@@ -76,7 +89,7 @@ public class OutlookCalendarDataAccessObject implements GetEventsDataAccessInter
         .toLocalDate();
 
       entity.Event event = new entity.Event(
-        outlookEvent.subject,
+        outlookEvent.subject != null ? outlookEvent.subject : "Untitled Event",
         eventDate,
         calendar
       );
@@ -93,12 +106,12 @@ public class OutlookCalendarDataAccessObject implements GetEventsDataAccessInter
       outlookEvent.subject = event.getEventName();
 
       com.microsoft.graph.models.DateTimeTimeZone start = new com.microsoft.graph.models.DateTimeTimeZone();
-      start.dateTime = event.getDate().atStartOfDay().toString();
+      start.dateTime = event.getDate().atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
       start.timeZone = ZoneId.systemDefault().toString();
       outlookEvent.start = start;
 
       com.microsoft.graph.models.DateTimeTimeZone end = new com.microsoft.graph.models.DateTimeTimeZone();
-      end.dateTime = event.getDate().atStartOfDay().plusHours(1).toString();
+      end.dateTime = event.getDate().atStartOfDay().plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
       end.timeZone = ZoneId.systemDefault().toString();
       outlookEvent.end = end;
 

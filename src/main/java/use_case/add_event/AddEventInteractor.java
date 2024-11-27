@@ -3,7 +3,10 @@ package use_case.add_event;
 import data_access.AddEventDataAccessInterface;
 import data_access.CalendarDataAccessObjectFactory;
 import entity.Calendar;
+import entity.Event;
 import interface_adapter.add_event.AddEventPresenter;
+
+import java.time.LocalDate;
 
 /**
  * The Change Day Calendar Interactor.
@@ -19,24 +22,30 @@ public class AddEventInteractor implements AddEventInputBoundary {
         this.addEventPresenter = addEventPresenter;
     }
 
-    @Override
-    public void execute(AddEventInputData inputData) {
+  @Override
+  public void execute(AddEventInputData inputData) {
+    try {
+      Calendar calendar = inputData.getCalendar();
+      Event event = new Event(
+        inputData.getEventName(),
+        LocalDate.parse(inputData.getDate()),
+        calendar
+      );
 
-        final Calendar calendar = inputData.getCalendarApi();
+      AddEventDataAccessInterface addEventDataAccessObject =
+        (AddEventDataAccessInterface) calendarDataAccessObjectFactory
+          .getCalendarDataAccessObject(calendar);
 
-        final AddEventDataAccessInterface addEventDataAccessObject =
-                (AddEventDataAccessInterface) this.calendarDataAccessObjectFactory
-                        .getCalendarDataAccessObject(calendar);
+      if (!addEventDataAccessObject.addEvent(event)) {
+        addEventPresenter.prepareFailView("Failed to add event");
+        return;
+      }
 
-        if (!addEventDataAccessObject.addEvent(inputData.getEvent())) {
-            this.addEventPresenter.prepareFailView("Unable to Add Event!");
-        }
-        else {
-            final AddEventOutputData changeCalendarDayOutputData =
-                    new AddEventOutputData(inputData.getEvent());
+      addEventPresenter.prepareSuccessView(new AddEventOutputData(event));
 
-            this.addEventPresenter.prepareSuccessView(changeCalendarDayOutputData);
-        }
+    } catch (Exception e) {
+      addEventPresenter.prepareFailView("Error adding event: " + e.getMessage());
     }
+  }
 }
 

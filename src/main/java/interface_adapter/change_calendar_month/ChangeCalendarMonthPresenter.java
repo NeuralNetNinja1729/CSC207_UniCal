@@ -8,16 +8,17 @@ import use_case.change_calendar_month.ChangeCalendarMonthOutputData;
  * The Presenter for the Change Month Calendar Use Case.
  */
 public class ChangeCalendarMonthPresenter implements ChangeCalendarMonthOutputBoundary {
+  private final ChangeCalendarMonthViewModel viewModel;
 
-    public ChangeCalendarMonthPresenter() {
-        // TODO
-    }
+  public ChangeCalendarMonthPresenter(ChangeCalendarMonthViewModel viewModel) {
+    this.viewModel = viewModel;
+  }
 
-    @Override
-    public void prepareSuccessView(ChangeCalendarMonthOutputData outputData) {
-        for (Event e : outputData.getEventList()) {
-            System.out.println(e.getEventName());
-        } // this is temporary, just to check that the use-case backend works
-    }
-
+  @Override
+  public void prepareSuccessView(ChangeCalendarMonthOutputData outputData) {
+    ChangeCalendarMonthState state = new ChangeCalendarMonthState();
+    state.setCurrCalendarList(outputData.getCalendarList());
+    viewModel.setState(state);
+    viewModel.firePropertyChanged();
+  }
 }

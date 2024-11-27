@@ -17,7 +17,7 @@ import java.util.Collections;
  */
 public class GoogleCalendar implements Calendar {
   private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-  private static final String CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar";
+  private static final String CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events";
 
   private final String credentials;
   private final String accountName;

@@ -50,43 +50,46 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
     }
 
     private ArrayList<Event> fetchEvents(JSONObject requestData) {
-        final ArrayList<Event> events = new ArrayList<>();
-        try {
-            // Prepare request details
-            final String notionApiKey = calendar.getNotionToken();
-            final String dbId = calendar.getDatabaseID();
-            final HttpURLConnection connection = createConnection(notionApiKey, dbId);
+    final ArrayList<Event> events = new ArrayList<>();
+    try {
+      // Prepare request details
+      final String notionApiKey = calendar.getNotionToken();
+      final String dbId = calendar.getDatabaseID();
+      final HttpURLConnection connection = createConnection(notionApiKey, dbId);
 
-            sendRequest(connection, requestData);
+      sendRequest(connection, requestData);
 
-            // Handle the response
-            final int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                final String response = getResponse(connection);
-                parseEventsFromResponse(response, events, calendar);
-            }
-            else {
-                System.out.println("Failed to fetch events. Response code: " + responseCode);
-            }
-
+      // Handle the response
+      final int responseCode = connection.getResponseCode();
+      if (responseCode == HttpURLConnection.HTTP_OK) {
+        final String response = getResponse(connection);
+        parseEventsFromResponse(response, events, calendar);
+      } else {
+        // Enhanced error logging
+        String errorResponse = "";
+        try (BufferedReader reader = new BufferedReader(
+          new InputStreamReader(connection.getErrorStream()))) {
+          String line;
+          StringBuilder responseBuilder = new StringBuilder();
+          while ((line = reader.readLine()) != null) {
+            responseBuilder.append(line);
+          }
+          errorResponse = responseBuilder.toString();
+        } catch (Exception e) {
+          errorResponse = "Could not read error response";
         }
-        catch (MalformedURLException exception) {
-            System.err.println("Invalid URL: " + exception.getMessage());
-        }
-        catch (IOException exception) {
-            System.err.println("Error with connection or I/O: " + exception.getMessage());
-        }
-        catch (JSONException exception) {
-            System.err.println("Error parsing JSON: " + exception.getMessage());
-        }
-        catch (Exception exception) {
-            exception.printStackTrace();
-        }
-        return events;
+        System.err.println("Failed to fetch events. Response code: " + responseCode);
+        System.err.println("Error response: " + errorResponse);
+      }
+    } catch (Exception exception) {
+      System.err.println("Error fetching Notion events: " + exception.getMessage());
+      exception.printStackTrace();
     }
+    return events;
+  }
 
     private HttpURLConnection createConnection(String notionApiKey, String dbId) throws Exception {
-        final String urlString = NOTION_API_BASE_URL + "/databases" + dbId + "/query";
+        final String urlString = NOTION_API_BASE_URL + "/databases/" + dbId + "/query";
         final URL url = new URL(urlString);
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
