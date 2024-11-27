@@ -4,25 +4,26 @@ import entity.Calendar;
 import entity.Event;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Output data for changing the calendar by day.
  */
 public class ChangeCalendarDayOutputData {
 
-    private final ArrayList<Calendar> calendarList;
-    private final ArrayList<Event> eventList;
+    private final List<Calendar> calendarList;
+    private final List<Event> eventList;
 
-    public ChangeCalendarDayOutputData(ArrayList<Calendar> calendarList, ArrayList<Event> eventList) {
+    public ChangeCalendarDayOutputData(List<Calendar> calendarList, List<Event> eventList) {
         this.calendarList = calendarList;
         this.eventList = eventList;
     }
 
-    public ArrayList<Calendar> getCalendarList() {
+    public List<Calendar> getCalendarList() {
         return calendarList;
     }
 
-    public ArrayList<Event> getEventList() {
+    public List<Event> getEventList() {
         return eventList;
     }
 }

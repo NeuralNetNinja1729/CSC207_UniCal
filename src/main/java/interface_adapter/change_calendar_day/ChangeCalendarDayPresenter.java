@@ -1,38 +1,55 @@
 package interface_adapter.change_calendar_day;
 
+import entity.Event;
+import interface_adapter.ViewManagerModel;
 import use_case.change_calendar_day.ChangeCalendarDayOutputBoundary;
 import use_case.change_calendar_day.ChangeCalendarDayOutputData;
 
-public class ChangeCalendarDayPresenter implements ChangeCalendarDayOutputBoundary {
-    private final ChangeCalendarDayViewModel changeCalendarDayViewModel;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
-    public ChangeCalendarDayPresenter(ChangeCalendarDayViewModel changeCalendarDayViewModel) {
-        this.changeCalendarDayViewModel = changeCalendarDayViewModel;
+/**
+ * The Presenter for the Change Day Calendar Use Case.
+ */
+public class ChangeCalendarDayPresenter implements ChangeCalendarDayOutputBoundary {
+
+    private final ChangeCalendarDayViewModel viewModel;
+    private final ViewManagerModel viewManagerModel;
+
+    public ChangeCalendarDayPresenter(ChangeCalendarDayViewModel changeCalendarDayViewModel,
+                                      ViewManagerModel viewManagerModel) {
+        this.viewModel = changeCalendarDayViewModel;
+        this.viewManagerModel = viewManagerModel;
     }
 
     @Override
     public void prepareSuccessView(ChangeCalendarDayOutputData outputData) {
-        ChangeCalendarDayState currentState = changeCalendarDayViewModel.getState();
-        ChangeCalendarDayState newState = new ChangeCalendarDayState(currentState);
+        Map<String, String> eventsByHour = new HashMap<>();
 
-        // Update state with data from the use case output
-        newState.setCalendars(outputData.getCalendarList());
-        newState.setEvents(outputData.getEventList());
-        newState.setError(null);
+        // Format the events
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        for (Event event : outputData.getEventList()) {
+            String time = event.getDate().atTime(event.getStartTime()).format(timeFormatter);
+            String eventName = event.getEventName();
 
-        changeCalendarDayViewModel.setState(newState);
-        changeCalendarDayViewModel.updateEvents();
-    }
+            // Append the event to the hour
+            eventsByHour.putIfAbsent(time, "");
+            eventsByHour.put(time, eventsByHour.get(time) + eventName + "\n");
+        }
 
-    /**
-     * Handles preparing the failure view when an error occurs
-     */
-    public void prepareFailView(String error) {
-        ChangeCalendarDayState currentState = changeCalendarDayViewModel.getState();
-        ChangeCalendarDayState newState = new ChangeCalendarDayState(currentState);
-        newState.setError(error);
+        // Update the view model with formatted data
+        ChangeCalendarDayState state = this.viewModel.getState();
+        state.setCurrCalendarList(outputData.getCalendarList());
 
-        changeCalendarDayViewModel.setState(newState);
-        changeCalendarDayViewModel.updateError();
+        // Store events as a simplified map for easy UI rendering
+        state.setEventMap(eventsByHour);
+
+        // Notify the view model about the state change
+        this.viewModel.setState(state);
+        this.viewModel.firePropertyChanged();
+
+        this.viewManagerModel.setState(viewModel.getViewName());
+        this.viewManagerModel.firePropertyChanged();
     }
 }

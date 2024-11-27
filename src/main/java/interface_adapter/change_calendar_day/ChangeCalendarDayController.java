@@ -5,31 +5,39 @@ import use_case.change_calendar_day.ChangeCalendarDayInputBoundary;
 import use_case.change_calendar_day.ChangeCalendarDayInputData;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ChangeCalendarDayController {
-    final ChangeCalendarDayInputBoundary changeCalendarDayUseCaseInteractor;
+    private final ChangeCalendarDayInputBoundary changeCalendarDayUseCaseInteractor;
 
     public ChangeCalendarDayController(ChangeCalendarDayInputBoundary changeCalendarDayUseCaseInteractor) {
         this.changeCalendarDayUseCaseInteractor = changeCalendarDayUseCaseInteractor;
     }
 
-    /**
-     * Executes the change calendar day use case.
-     * @param calendar the current calendar being viewed
-     * @param dateString the selected date in YYYY-MM-DD format
-     */
-    public void execute(Calendar calendar, String dateString) {
-        try {
-            // Create list with single calendar
-            ArrayList<Calendar> calendars = new ArrayList<>();
-            calendars.add(calendar);
 
-            // Create input data and execute use case
-            ChangeCalendarDayInputData inputData = new ChangeCalendarDayInputData(calendars, dateString);
-            changeCalendarDayUseCaseInteractor.execute(inputData);
-        } catch (Exception e) {
-            // The presenter will handle the error display
-            throw new RuntimeException("Error fetching daily events: " + e.getMessage());
-        }
+    public void execute(List<Calendar> calendarList, String month, Integer day, Integer year) {
+        Map<String, String> monthNumeric = new HashMap<>();
+        monthNumeric.put("January", "01");
+        monthNumeric.put("February", "02");
+        monthNumeric.put("March", "03");
+        monthNumeric.put("April", "04");
+        monthNumeric.put("May", "05");
+        monthNumeric.put("June", "06");
+        monthNumeric.put("July", "07");
+        monthNumeric.put("August", "08");
+        monthNumeric.put("September", "09");
+        monthNumeric.put("October", "10");
+        monthNumeric.put("November", "11");
+        monthNumeric.put("December", "12");
+
+        String monthNum = monthNumeric.get(month);
+        String date = year + "-" + monthNum + "-" + day;
+
+        final ChangeCalendarDayInputData changeCalDayInpData = new ChangeCalendarDayInputData(
+                calendarList, date);
+
+        changeCalendarDayUseCaseInteractor.execute(changeCalDayInpData);
     }
 }

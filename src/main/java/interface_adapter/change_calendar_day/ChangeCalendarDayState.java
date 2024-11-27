@@ -1,63 +1,93 @@
 package interface_adapter.change_calendar_day;
 
 import entity.Calendar;
-import entity.Event;
-import java.time.LocalDate;
+import entity.User;
+
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ChangeCalendarDayState {
-    private ArrayList<Calendar> calendars = new ArrayList<>();
-    private ArrayList<Event> events = new ArrayList<>();
-    private LocalDate selectedDate;
-    private String error = null;
+    private User currentUser;
+    private Calendar googleCalendar;
+    private Calendar notionCalendar;
+    private Calendar outlookCalendar;
+    private List<Calendar> currCalendarList = new ArrayList<>();
+    private Map<String, String> eventMap = new HashMap<>();
+    private String currMonth;
+    private Integer currYear;
+    private Integer currDay;
 
-    // For creating copies in the view model
-    public ChangeCalendarDayState(ChangeCalendarDayState copy) {
-        if (copy != null) {
-            this.calendars = new ArrayList<>(copy.calendars);
-            this.events = new ArrayList<>(copy.events);
-            this.selectedDate = copy.selectedDate;
-            this.error = copy.error;
-        }
+    public User getCurrentUser() {
+        return currentUser;
     }
 
-    // Default constructor
-    public ChangeCalendarDayState() {}
-
-    public ArrayList<Calendar> getCalendars() {
-        return calendars;
+    public void setCurrentUser(User currentUser) {
+        this.currentUser = currentUser;
     }
 
-    public void setCalendars(ArrayList<Calendar> calendars) {
-        this.calendars = calendars;
+    public Calendar getGoogleCalendar() {
+        return googleCalendar;
     }
 
-    public ArrayList<Event> getEvents() {
-        return events;
+    public void setGoogleCalendar(Calendar googleCalendar) {
+        this.googleCalendar = googleCalendar;
     }
 
-    public void setEvents(ArrayList<Event> events) {
-        this.events = events;
+    public Calendar getNotionCalendar() {
+        return notionCalendar;
     }
 
-    public LocalDate getSelectedDate() {
-        return selectedDate;
+    public void setNotionCalendar(Calendar notionCalendar) {
+        this.notionCalendar = notionCalendar;
     }
 
-    public void setSelectedDate(LocalDate date) {
-        this.selectedDate = date;
+    public Calendar getOutlookCalendar() {
+        return outlookCalendar;
     }
 
-    public String getError() {
-        return error;
+    public void setOutlookCalendar(Calendar outlookCalendar) {
+        this.outlookCalendar = outlookCalendar;
     }
 
-    public void setError(String error) {
-        this.error = error;
+    public List<Calendar> getCurrCalendarList() {
+        return currCalendarList;
     }
 
-    // Helper method to get the current calendar (since we're only using one)
-    public Calendar getCurrentCalendar() {
-        return calendars.isEmpty() ? null : calendars.get(0);
+    public void setCurrCalendarList(List<Calendar> currCalendarList) {
+        this.currCalendarList = currCalendarList;
+    }
+
+    public Map<String, String> getEventMap() {
+        return eventMap;
+    }
+
+    public void setEventMap(Map<String, String> eventMap) {
+        this.eventMap = eventMap;
+    }
+
+    public String getCurrMonth() {
+        return currMonth;
+    }
+
+    public void setCurrMonth(String currMonth) {
+        this.currMonth = currMonth;
+    }
+
+    public Integer getCurrYear() {
+        return currYear;
+    }
+
+    public void setCurrYear(Integer currYear) {
+        this.currYear = currYear;
+    }
+
+    public Integer getCurrDay() {
+        return currDay;
+    }
+
+    public void setCurrDay(Integer currDay) {
+        this.currDay = currDay;
     }
 }
