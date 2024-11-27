@@ -32,7 +32,8 @@ public class ChangeCalendarDayPresenter implements ChangeCalendarDayOutputBounda
         for (Event event : outputData.getEventList()) {
             String time = event.getDate().atTime(event.getStartTime()).format(timeFormatter);
             String eventName = event.getEventName();
-
+            // TODO: this assumes that the event has a getStartTime method
+            //  which returns a LocalTime object, we need to add this
             // Append the event to the hour
             eventsByHour.putIfAbsent(time, "");
             eventsByHour.put(time, eventsByHour.get(time) + eventName + "\n");
