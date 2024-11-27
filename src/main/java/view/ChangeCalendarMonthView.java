@@ -1,12 +1,15 @@
 package view;
 
-import entity.Calendar;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthController;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthState;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthViewModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
@@ -17,7 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class ChangeCalendarMonthView extends JPanel {
+public class ChangeCalendarMonthView extends JPanel implements ActionListener, PropertyChangeListener {
 
     private JFrame frame;
     private JPanel calendarPanel;
@@ -55,6 +58,9 @@ public class ChangeCalendarMonthView extends JPanel {
         googleButton.addActionListener(evt -> handleCalendarSelection("Google"));
         outlookButton.addActionListener(evt -> handleCalendarSelection("Outlook"));
         notionButton.addActionListener(evt -> handleCalendarSelection("Notion"));
+
+
+
 
         sidePanel.add(googleButton);
         sidePanel.add(outlookButton);
@@ -189,5 +195,33 @@ public class ChangeCalendarMonthView extends JPanel {
         // Refresh the calendar panel
         calendarPanel.revalidate();
         calendarPanel.repaint();
+    }
+
+    public String getViewName() {
+        return viewName;
+    }
+
+    /**
+     * Invoked when an action occurs.
+     *
+     * @param e the event to be processed
+     */
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        System.out.println("Click " + e.getActionCommand());
+    }
+
+    /**
+     * This method gets called when a bound property is changed.
+     *
+     * @param evt A PropertyChangeEvent object describing the event source
+     *            and the property that has changed.
+     */
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        ChangeCalendarMonthState state = (ChangeCalendarMonthState) evt.getNewValue();
+        if (state.getEventMap() != null) {
+            updateCalendar(); // Calls the existing method to refresh the calendar view
+        }
     }
 }

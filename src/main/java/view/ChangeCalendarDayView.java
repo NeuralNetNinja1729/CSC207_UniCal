@@ -1,30 +1,25 @@
 package view;
 
 import interface_adapter.change_calendar_day.ChangeCalendarDayController;
-import interface_adapter.change_calendar_day.ChangeCalendarDayState;
 import interface_adapter.change_calendar_day.ChangeCalendarDayViewModel;
 import entity.Event;
 
 import javax.swing.*;
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
+import java.awt.event.ActionListener;
 import java.beans.PropertyChangeListener;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class CalendarDayView extends JPanel implements PropertyChangeListener {
-    private final String viewName = "calendar day";
-    private final ChangeCalendarDayViewModel changeCalendarDayViewModel;
-    private ChangeCalendarDayController changeCalendarDayController;
+public class ChangeCalendarDayView extends JPanel implements ActionListener, PropertyChangeListener {
 
-    // UI Components
+    private final JFrame frame;
     private final JPanel eventsPanel;
     private final JLabel dateLabel;
-    private final JPanel headerPanel;
     private final JLabel calendarNameLabel;
 
     // Time slots from 12 AM to 11 PM
@@ -32,32 +27,37 @@ public class CalendarDayView extends JPanel implements PropertyChangeListener {
     private static final int END_HOUR = 23;
     private final Map<Integer, JPanel> timeSlots = new HashMap<>();
 
-    public CalendarDayView(ChangeCalendarDayViewModel viewModel) {
-        this.changeCalendarDayViewModel = viewModel;
-        this.changeCalendarDayViewModel.addPropertyChangeListener(this);
+    private final ChangeCalendarDayViewModel viewModel;
+    private ChangeCalendarDayController controller;
 
-        // Set up the main layout
-        setLayout(new BorderLayout());
+    public ChangeCalendarDayView(ChangeCalendarDayViewModel viewModel) {
+        this.viewModel = viewModel;
 
-        // Create header panel
-        headerPanel = new JPanel(new BorderLayout());
+        // Create the frame
+        frame = new JFrame("UniCal - Day View");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(800, 600);
+        frame.setLayout(new BorderLayout());
+
+        // Create the header panel
+        JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(new Color(230, 240, 250)); // Light blue background
 
-        // Create calendar name label
+        // Calendar name label
         calendarNameLabel = new JLabel("Calendar: Not Selected");
         calendarNameLabel.setFont(new Font("Arial", Font.BOLD, 16));
         calendarNameLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         headerPanel.add(calendarNameLabel, BorderLayout.WEST);
 
-        // Create date label
+        // Date label
         dateLabel = new JLabel("Select a date");
         dateLabel.setFont(new Font("Arial", Font.BOLD, 16));
         dateLabel.setHorizontalAlignment(SwingConstants.CENTER);
         headerPanel.add(dateLabel, BorderLayout.CENTER);
 
-        add(headerPanel, BorderLayout.NORTH);
+        frame.add(headerPanel, BorderLayout.NORTH);
 
-        // Create scrollable events panel
+        // Create the scrollable events panel
         eventsPanel = new JPanel();
         eventsPanel.setLayout(new BoxLayout(eventsPanel, BoxLayout.Y_AXIS));
 
@@ -68,7 +68,10 @@ public class CalendarDayView extends JPanel implements PropertyChangeListener {
         JScrollPane scrollPane = new JScrollPane(eventsPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        add(scrollPane, BorderLayout.CENTER);
+        frame.add(scrollPane, BorderLayout.CENTER);
+
+        // Make the frame visible
+        frame.setVisible(true);
     }
 
     private void createTimeSlots() {
@@ -94,9 +97,9 @@ public class CalendarDayView extends JPanel implements PropertyChangeListener {
 
             timeSlot.add(timeLabelPanel, BorderLayout.WEST);
 
-            // Events area for this time slot (stretches to fill space)
+            // Events area for this time slot
             JPanel eventArea = new JPanel();
-            eventArea.setLayout(new BoxLayout(eventArea, BoxLayout.X_AXIS));
+            eventArea.setLayout(new BoxLayout(eventArea, BoxLayout.Y_AXIS));
             eventArea.setBackground(Color.WHITE);
             timeSlot.add(eventArea, BorderLayout.CENTER);
 
@@ -105,17 +108,14 @@ public class CalendarDayView extends JPanel implements PropertyChangeListener {
         }
     }
 
-    public void displayEvents(ArrayList<Event> events) {
-        // Clear all existing events
+    public void displayEvents(List<Event> events) {
         createTimeSlots();
 
         if (events != null) {
             for (Event event : events) {
-                // Get the hour for the event
-                LocalTime eventTime = event.getDate().atStartOfDay().toLocalTime();
-                int hour = eventTime.getHour();
+                LocalTime eventStartTime = event.getStartTime();
+                int hour = eventStartTime.getHour();
 
-                // Add event to the appropriate time slot
                 if (timeSlots.containsKey(hour)) {
                     JPanel timeSlot = timeSlots.get(hour);
                     JPanel eventArea = (JPanel) timeSlot.getComponent(1); // Get the event area
@@ -125,13 +125,12 @@ public class CalendarDayView extends JPanel implements PropertyChangeListener {
             }
         }
 
-        revalidate();
-        repaint();
+        eventsPanel.revalidate();
+        eventsPanel.repaint();
     }
 
     private JPanel createEventDisplay(Event event) {
-        JPanel eventDisplay = new JPanel();
-        eventDisplay.setLayout(new BorderLayout());
+        JPanel eventDisplay = new JPanel(new BorderLayout());
 
         // Set gradient-like background
         eventDisplay.setBackground(new Color(144, 238, 144)); // Light green
@@ -141,58 +140,42 @@ public class CalendarDayView extends JPanel implements PropertyChangeListener {
         ));
 
         // Event title
-        JLabel titleLabel = new JLabel(event.getEventName());
+        JLabel titleLabel = new JLabel(event.getName());
         titleLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        eventDisplay.add(titleLabel, BorderLayout.CENTER);
+        eventDisplay.add(titleLabel, BorderLayout.NORTH);
 
-        // Set preferred size for consistent event display
+        // Event description
+        JLabel descriptionLabel = new JLabel("<html>" + event.getDescription() + "</html>");
+        descriptionLabel.setFont(new Font("Arial", Font.PLAIN, 10));
+        eventDisplay.add(descriptionLabel, BorderLayout.CENTER);
+
         eventDisplay.setPreferredSize(new Dimension(200, 50));
         eventDisplay.setMaximumSize(new Dimension(200, 50));
 
         return eventDisplay;
     }
 
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        ChangeCalendarDayState state = (ChangeCalendarDayState) evt.getNewValue();
-
-        // Update calendar name if available
-        if (state.getCurrentCalendar() != null) {
-            calendarNameLabel.setText("Calendar: " + state.getCurrentCalendar().getCalendarName());
-        }
-
-        // Update date display if available
-        if (state.getSelectedDate() != null) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
-            dateLabel.setText(state.getSelectedDate().format(formatter));
-        }
-
-        // Update events
-        displayEvents(state.getEvents());
-
-        // Handle any errors
-        if (state.getError() != null) {
-            JOptionPane.showMessageDialog(this,
-                    state.getError(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    public String getViewName() {
-        return viewName;
-    }
-
     public void setController(ChangeCalendarDayController controller) {
-        this.changeCalendarDayController = controller;
+        this.controller = controller;
+    }
+
+    public void updateView(LocalDate selectedDate, List<Event> events, String calendarName) {
+        // Update the date label
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+        dateLabel.setText(selectedDate.format(formatter));
+
+        // Update the calendar name
+        calendarNameLabel.setText("Calendar: " + calendarName);
+
+        // Display events
+        displayEvents(events);
+    }
+
+    public ChangeCalendarDayViewModel getViewModel() {
+        return viewModel;
     }
 
     public ChangeCalendarDayController getController() {
-        return changeCalendarDayController;
-    }
-
-    // Test method to directly add events
-    public void setTestEvents(ArrayList<Event> events) {
-        displayEvents(events);
+        return controller;
     }
 }
