@@ -16,8 +16,12 @@ public class ChangeCalendarMonthPresenter implements ChangeCalendarMonthOutputBo
 
   @Override
   public void prepareSuccessView(ChangeCalendarMonthOutputData outputData) {
-    ChangeCalendarMonthState state = new ChangeCalendarMonthState();
+    ChangeCalendarMonthState state = viewModel.getState();
     state.setCurrCalendarList(outputData.getCalendarList());
+    state.setCurrEvents(outputData.getEventList());  // Make sure events are being set
+    System.out.println("Presenter received " +
+      (outputData.getEventList() != null ? outputData.getEventList().size() : 0) +
+      " events"); // Debug print
     viewModel.setState(state);
     viewModel.firePropertyChanged();
   }

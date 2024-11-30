@@ -13,35 +13,33 @@ import java.util.List;
  * The Change Month Calendar Interactor.
  */
 public class ChangeCalendarMonthInteractor implements ChangeCalendarMonthInputBoundary {
+  private final CalendarDataAccessObjectFactory calendarDataAccessObjectFactory;
+  private final ChangeCalendarMonthPresenter changeCalendarMonthPresenter;
 
-    private final CalendarDataAccessObjectFactory calendarDataAccessObjectFactory;
-    private final ChangeCalendarMonthPresenter changeCalendarMonthPresenter;
+  public ChangeCalendarMonthInteractor(CalendarDataAccessObjectFactory calendarDataAccessObjectFactory,
+                                       ChangeCalendarMonthPresenter changeCalendarMonthPresenter) {
+    this.calendarDataAccessObjectFactory = calendarDataAccessObjectFactory;
+    this.changeCalendarMonthPresenter = changeCalendarMonthPresenter;
+  }
 
-    public ChangeCalendarMonthInteractor(CalendarDataAccessObjectFactory calendarDataAccessObjectFactory,
-                                         ChangeCalendarMonthPresenter changeCalendarMonthPresenter) {
-        this.calendarDataAccessObjectFactory = calendarDataAccessObjectFactory;
-        this.changeCalendarMonthPresenter = changeCalendarMonthPresenter;
+  @Override
+  public void execute(ChangeCalendarMonthInputData inputData) {
+    final List<Event> events = new ArrayList<>();
+    final List<Calendar> calendars = inputData.getCalendarList();
+
+    for (Calendar calendar : calendars) {
+      final GetEventsDataAccessInterface getEventsDataAccessObject =
+        (GetEventsDataAccessInterface) this.calendarDataAccessObjectFactory
+          .getCalendarDataAccessObject(calendar);
+
+      events.addAll(getEventsDataAccessObject.fetchEventsMonth(inputData.getDate()));
     }
 
-    @Override
-    public void execute(ChangeCalendarMonthInputData inputData) {
+    final ChangeCalendarMonthOutputData outputData =
+      new ChangeCalendarMonthOutputData(calendars, events);
 
-        final List<Event> events = new ArrayList<>();
-
-        final List<Calendar> calendars = inputData.getCalendarList();
-        for (int i = 0; i < calendars.size(); i++) {
-
-            final GetEventsDataAccessInterface getEventsDataAccessObject =
-                    (GetEventsDataAccessInterface) this.calendarDataAccessObjectFactory
-                            .getCalendarDataAccessObject(calendars.get(i));
-
-            events.addAll(getEventsDataAccessObject.fetchEventsMonth(inputData.getDate()));
-        }
-
-        final ChangeCalendarMonthOutputData changeCalendarMonthOutputData =
-                new ChangeCalendarMonthOutputData(calendars, events);
-
-        this.changeCalendarMonthPresenter.prepareSuccessView(changeCalendarMonthOutputData);
-    }
+    this.changeCalendarMonthPresenter.prepareSuccessView(outputData);
+  }
 }
+
 
