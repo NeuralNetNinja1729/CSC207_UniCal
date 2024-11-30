@@ -40,6 +40,7 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
 
     public ChangeCalendarMonthView(ChangeCalendarMonthViewModel viewModel) {
         this.viewModel = viewModel;
+        this.viewModel.addPropertyChangeListener(this);
 
         // Create the frame
         this.frame = new JFrame("UniCal");

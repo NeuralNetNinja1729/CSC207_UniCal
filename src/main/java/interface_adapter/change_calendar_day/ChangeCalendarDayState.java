@@ -3,6 +3,7 @@ package interface_adapter.change_calendar_day;
 import entity.Calendar;
 import entity.User;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +66,10 @@ public class ChangeCalendarDayState {
 
     public void setEventMap(Map<String, String> eventMap) {
         this.eventMap = eventMap;
+    }
+
+    public void addEvent(String time, String eventName) {
+        eventMap.put(time, eventName);
     }
 
     public String getCurrMonth() {

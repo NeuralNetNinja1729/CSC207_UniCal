@@ -32,10 +32,10 @@ public class AddEventInteractor implements AddEventInputBoundary {
             this.addEventPresenter.prepareFailView("Unable to Add Event!");
         }
         else {
-            final AddEventOutputData changeCalendarDayOutputData =
-                    new AddEventOutputData(inputData.getEvent());
+            final AddEventOutputData addEventOutputData =
+                    new AddEventOutputData(inputData.getCalendarApi(), inputData.getEvent());
 
-            this.addEventPresenter.prepareSuccessView(changeCalendarDayOutputData);
+            this.addEventPresenter.prepareSuccessView(addEventOutputData);
         }
     }
 }
