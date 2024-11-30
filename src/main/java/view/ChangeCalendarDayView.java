@@ -28,9 +28,11 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
     private JButton outlookButton;
     private JButton notionButton;
     private JButton addEventButton;
+    private JButton deleteEventButton;
     private JComboBox<Month> monthSelector;
     private JComboBox<Integer> yearSelector;
     private JComboBox<Integer> daySelector;
+    private JList<String> eventsList;
 
     private final String viewName = "calendar day";
     private final ChangeCalendarDayViewModel viewModel;
@@ -49,7 +51,7 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
 
         // Create the side panel for buttons
         JPanel sidePanel = new JPanel();
-        sidePanel.setLayout(new GridLayout(5, 1, 10, 10));
+        sidePanel.setLayout(new GridLayout(6, 1, 10, 10));
         sidePanel.setPreferredSize(new Dimension(200, 0));
         sidePanel.setBackground(new Color(68, 168, 167));
 
@@ -57,17 +59,20 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
         outlookButton = new JButton("Outlook");
         notionButton = new JButton("Notion");
         addEventButton = new JButton("Add Event");
+        deleteEventButton = new JButton("Delete Event");
         JButton logoutButton = new JButton("Logout");
 
         googleButton.addActionListener(evt -> handleCalendarSelection("Google"));
         outlookButton.addActionListener(evt -> handleCalendarSelection("Outlook"));
         notionButton.addActionListener(evt -> handleCalendarSelection("Notion"));
         addEventButton.addActionListener(evt -> openAddEventPopup());
+        deleteEventButton.addActionListener(evt -> deleteSelectedEvent());
 
         sidePanel.add(googleButton);
         sidePanel.add(outlookButton);
         sidePanel.add(notionButton);
         sidePanel.add(addEventButton);
+        sidePanel.add(deleteEventButton);
         sidePanel.add(logoutButton);
 
         frame.add(sidePanel, BorderLayout.WEST);
@@ -99,12 +104,16 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
 
         // Create the panel to display events for the selected day
         eventsPanel = new JPanel();
-        eventsPanel.setLayout(new BoxLayout(eventsPanel, BoxLayout.Y_AXIS));
+        eventsPanel.setLayout(new BorderLayout());
         eventsPanel.setBackground(Color.WHITE);
 
-        JScrollPane scrollPane = new JScrollPane(eventsPanel);
+        eventsList = new JList<>();
+        eventsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane scrollPane = new JScrollPane(eventsList);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        frame.add(scrollPane, BorderLayout.CENTER);
+        eventsPanel.add(scrollPane, BorderLayout.CENTER);
+
+        frame.add(eventsPanel, BorderLayout.CENTER);
 
         // Initialize the day view
         updateDayEvents();
@@ -157,40 +166,67 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
     }
 
     private void updateDayEvents() {
-        eventsPanel.removeAll();
-
         // Retrieve events from the state
         ChangeCalendarDayState state = viewModel.getState();
         Map<String, String> eventsByHour = state.getEventMap();
 
+        DefaultListModel<String> listModel = new DefaultListModel<>();
         if (eventsByHour != null) {
             for (Map.Entry<String, String> entry : eventsByHour.entrySet()) {
-                JPanel eventPanel = new JPanel(new BorderLayout());
-                eventPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-                eventPanel.setBackground(new Color(230, 240, 250)); // Light blue
-
-                // Display the time
-                JLabel timeLabel = new JLabel(entry.getKey(), SwingConstants.LEFT);
-                timeLabel.setFont(new Font("Arial", Font.BOLD, 12));
-                eventPanel.add(timeLabel, BorderLayout.WEST);
-
-                // Display the event description
-                JTextArea eventDescription = new JTextArea(entry.getValue());
-                eventDescription.setEditable(false);
-                eventDescription.setLineWrap(true);
-                eventDescription.setWrapStyleWord(true);
-                eventPanel.add(eventDescription, BorderLayout.CENTER);
-
-                eventsPanel.add(eventPanel);
+                String time = entry.getKey();
+                String eventDetails = entry.getValue();
+                listModel.addElement(time + " - " + eventDetails.trim());
             }
         } else {
-            JLabel noEventsLabel = new JLabel("No events for the selected day", SwingConstants.CENTER);
-            noEventsLabel.setFont(new Font("Arial", Font.ITALIC, 14));
-            eventsPanel.add(noEventsLabel);
+            listModel.addElement("No events for the selected day");
+        }
+        eventsList.setModel(listModel);
+    }
+
+    private void deleteSelectedEvent() {
+        String selectedEvent = eventsList.getSelectedValue();
+        if (selectedEvent == null || selectedEvent.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Please select an event to delete.", "No Event Selected", JOptionPane.WARNING_MESSAGE);
+            return;
         }
 
-        eventsPanel.revalidate();
-        eventsPanel.repaint();
+        // Extract event details from the selected event string
+        String[] parts = selectedEvent.split(" - ", 2);
+        if (parts.length < 2) {
+            JOptionPane.showMessageDialog(frame, "Unable to extract event details.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String time = parts[0];
+        String eventDetails = parts[1];
+
+        // Extract event name and calendar API name from event details
+        String[] detailsParts = eventDetails.split("\n");
+        if (detailsParts.length < 2) {
+            JOptionPane.showMessageDialog(frame, "Unable to extract event details.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String eventName = detailsParts[0].trim();
+        String calendarApiName = detailsParts[1].replaceAll("[()]", "").trim();
+
+        // Create an Event object from the extracted details (assuming Event has the necessary constructor)
+        LocalDate selectedDate = LocalDate.of((Integer) yearSelector.getSelectedItem(), (Month) monthSelector.getSelectedItem(), (Integer) daySelector.getSelectedItem());
+        Event eventToDelete;
+        switch (calendarApiName) {
+            case "Google":
+                eventToDelete = new Event(eventName, selectedDate, this.viewModel.getState().getGoogleCalendar());
+                break;
+            case "Notion":
+                eventToDelete = new Event(eventName, selectedDate, this.viewModel.getState().getNotionCalendar());
+                break;
+            case "Outlook":
+                eventToDelete = new Event(eventName, selectedDate, this.viewModel.getState().getOutlookCalendar());
+                break;
+        }
+
+        // TODO: Call the use case to delete the event using the eventToDelete object
+
     }
 
     private void openAddEventPopup() {
@@ -266,7 +302,6 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
                 LocalDate localDate = LocalDate.of(selectedYear, selectedMonth, selectedDay);
                 state.setEvent(new Event(eventName, localDate, state.getCurrCalendar()));
 
-
                 // Send data to the controller
                 addEventController.execute(state.getEvent().getEventName(), state.getCurrMonth(), state.getCurrYear(),
                         state.getCurrDay(), state.getCurrCalendar());
@@ -313,7 +348,6 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
             dayDropdown.addItem(day);
         }
     }
-
 
     @Override
     public void actionPerformed(ActionEvent e) {

@@ -28,8 +28,10 @@ public class AddEventPresenter implements AddEventOutputBoundary {
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
         String time = event.getDate().atTime(event.getStartTime()).format(timeFormatter);
         String eventName = event.getEventName();
+        String calendarApi = event.getCalendarApi().getCalendarApiName();
+        String eventDetails = eventName + " (" + calendarApi + ")";
         ChangeCalendarDayState state = this.viewModel.getState();
-        state.addEvent(time, eventName);
+        state.addEvent(time, eventDetails);
         this.viewModel.setState(state);
         this.viewModel.firePropertyChanged();
 
