@@ -71,8 +71,8 @@ public class ChangeCalendarDayState {
     public void addEvent(String time, String eventDetails) {
         eventMap.put(time, eventDetails);
     }
-    public void deleteEvent(String eventName) {
-        eventMap.remove(eventName);
+    public void deleteEvent(String eventDetails) {
+        eventMap.remove(eventDetails);
     }
 
     public String getCurrMonth() {

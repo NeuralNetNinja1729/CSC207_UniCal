@@ -27,8 +27,9 @@ public class DeleteEventPresenter implements DeleteEventOutputBoundary {
     DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
     String time = event.getDate().atTime(event.getStartTime()).format(timeFormatter);
     String eventName = event.getEventName();
+    String calendarApiName = event.getCalendarApi().getCalendarApiName();
     ChangeCalendarDayState state = this.viewModel.getState();
-    state.deleteEvent(eventName);
+    state.deleteEvent(eventName + " (" + calendarApiName + ")");
     this.viewModel.setState(state);
     this.viewModel.firePropertyChanged();
 
