@@ -39,8 +39,12 @@ public class ChangeCalendarDayPresenter implements ChangeCalendarDayOutputBounda
         ChangeCalendarDayState state = this.viewModel.getState();
         state.setCurrCalendarList(outputData.getCalendarList());
 
+
         // Store events as a list for easy UI rendering
         state.setEventList(eventsList);
+        state.setCurrMonth(outputData.getDate().getMonth().toString());
+        state.setCurrYear(outputData.getDate().getYear());
+        state.setCurrDay(outputData.getDate().getDayOfMonth());
 
         // Notify the view model about the state change
         this.viewModel.setState(state);

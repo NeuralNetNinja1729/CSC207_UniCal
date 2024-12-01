@@ -39,7 +39,7 @@ public class ChangeCalendarDayInteractor implements ChangeCalendarDayInputBounda
         }
 
         final ChangeCalendarDayOutputData changeCalendarDayOutputData =
-                new ChangeCalendarDayOutputData(calendars, events);
+                new ChangeCalendarDayOutputData(calendars, events, inputData.getDate());
 
         this.changeCalendarDayPresenter.prepareSuccessView(changeCalendarDayOutputData);
     }

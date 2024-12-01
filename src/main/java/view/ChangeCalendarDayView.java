@@ -1,6 +1,7 @@
 package view;
 
 import entity.Calendar;
+import entity.Event;
 import interface_adapter.add_event.AddEventController;
 import interface_adapter.change_calendar_day.ChangeCalendarDayController;
 import interface_adapter.change_calendar_day.ChangeCalendarDayState;
@@ -16,9 +17,11 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.Year;
 import java.time.format.TextStyle;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import entity.Event;
+import java.util.Map;
+
 import interface_adapter.delete_event.DeleteEventController;
 
 public class ChangeCalendarDayView extends JPanel implements ActionListener, PropertyChangeListener {
@@ -187,6 +190,46 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
         // Remove the event from the state and update the view
         ChangeCalendarDayState state = viewModel.getState();
         state.deleteEvent(selectedEvent);
+        int openParenIndex = selectedEvent.indexOf('(');
+        int closeParenIndex = selectedEvent.indexOf(')');
+        String eventName = selectedEvent.substring(0, openParenIndex).trim();
+        String eventCalendar = selectedEvent.substring(openParenIndex + 1, closeParenIndex).trim();
+        Calendar deleteEventCalendar = null;
+        switch (eventCalendar) {
+            case "GoogleCalendar":
+                deleteEventCalendar = state.getGoogleCalendar();
+                break;
+            case "OutlookCalendar":
+                deleteEventCalendar = state.getOutlookCalendar();
+                break;
+            case "NotionCalendar":
+                deleteEventCalendar = state.getNotionCalendar();
+                break;
+        }
+        String eventDayString;
+        if (state.getCurrDay() < 10){
+            eventDayString = "0" + state.getCurrDay();
+        }
+        else {
+            eventDayString = state.getCurrDay().toString();
+        }
+        Map<String, String> monthNumeric = new HashMap<>();
+        monthNumeric.put("JANUARY", "01");
+        monthNumeric.put("FEBRUARY", "02");
+        monthNumeric.put("MARCH", "03");
+        monthNumeric.put("APRIL", "04");
+        monthNumeric.put("MAY", "05");
+        monthNumeric.put("JUNE", "06");
+        monthNumeric.put("JULY", "07");
+        monthNumeric.put("AUGUST", "08");
+        monthNumeric.put("SEPTEMBER", "09");
+        monthNumeric.put("OCTOBER", "10");
+        monthNumeric.put("NOVEMBER", "11");
+        monthNumeric.put("DECEMBER", "12");
+        String monthNum = monthNumeric.get(state.getCurrMonth().toUpperCase(Locale.ROOT));
+        String eventDateString = state.getCurrYear() + "-" + monthNum + "-" + eventDayString;
+        Event eventToDelete = new Event(eventName, LocalDate.parse(eventDateString), deleteEventCalendar);
+        deleteEventController.execute(eventToDelete, deleteEventCalendar);
         updateDayEvents();
     }
 
@@ -216,17 +259,23 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
         JComboBox<Integer> dayDropdown = new JComboBox<>();
         populateDayDropdown(yearDropdown, monthDropdown, dayDropdown);
 
+        ChangeCalendarDayState state = viewModel.getState();
+        monthDropdown.setSelectedItem(Month.valueOf(state.getCurrMonth().toUpperCase(Locale.ROOT)));
+        yearDropdown.setSelectedItem(state.getCurrYear());
+        dayDropdown.setSelectedItem(state.getCurrDay());
+
         // Add action listeners to update days when year or month changes
         yearDropdown.addActionListener(e -> populateDayDropdown(yearDropdown, monthDropdown, dayDropdown));
         monthDropdown.addActionListener(e -> populateDayDropdown(yearDropdown, monthDropdown, dayDropdown));
 
         // Description field
-        JLabel descriptionLabel = new JLabel("Description:");
-        JTextField descriptionField = new JTextField();
+        //JLabel descriptionLabel = new JLabel("Description:");
+        //JTextField descriptionField = new JTextField();
 
         // Calendar selector dropdown
         JLabel calendarLabel = new JLabel("Calendar:");
-        JComboBox<String> calendarDropdown = new JComboBox<>(new String[]{"Google", "Notion", "Outlook"});
+        JComboBox<String> calendarDropdown = new JComboBox<>(new String[]{"GoogleCalendar", "NotionCalendar",
+                "OutlookCalendar"});
 
         // Save and Cancel buttons
         JButton saveButton = new JButton("Save");
@@ -240,12 +289,25 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
             Integer selectedDay = (Integer) dayDropdown.getSelectedItem();
             String selectedCalendar = (String) calendarDropdown.getSelectedItem();
 
+            Calendar eventCalendar = null;
+
+            switch (selectedCalendar) {
+                case "GoogleCalendar":
+                    eventCalendar = this.viewModel.getState().getGoogleCalendar();
+                    break;
+                case "NotionCalendar":
+                    eventCalendar = this.viewModel.getState().getNotionCalendar();
+                    break;
+                case "OutlookCalendar":
+                    eventCalendar = this.viewModel.getState().getOutlookCalendar();
+            }
+
             if (!eventName.isEmpty() && selectedYear != null && selectedMonth != null && selectedDay != null) {
                 // Add the event to the state
                 String eventDetails = eventName + " (" + selectedCalendar + ")";
-                ChangeCalendarDayState state = viewModel.getState();
                 state.addEvent(eventDetails);
-                updateDayEvents();
+                addEventController.execute(eventName, selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault()),
+                        selectedDay, selectedYear, eventCalendar);
                 dialog.dispose();
             } else {
                 JOptionPane.showMessageDialog(dialog, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -264,8 +326,8 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
         dialog.add(monthDropdown);
         dialog.add(dayLabel);
         dialog.add(dayDropdown);
-        dialog.add(descriptionLabel);
-        dialog.add(descriptionField);
+//        dialog.add(descriptionLabel);
+//        dialog.add(descriptionField);
         dialog.add(calendarLabel);
         dialog.add(calendarDropdown);
         dialog.add(saveButton);
@@ -296,10 +358,22 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         ChangeCalendarDayState state = (ChangeCalendarDayState) evt.getNewValue();
+
+        monthSelector.setSelectedItem(Month.valueOf(state.getCurrMonth().toUpperCase(Locale.ROOT)));
+        yearSelector.setSelectedItem(state.getCurrYear());
+        daySelector.setSelectedItem(state.getCurrDay());
+
         if (state.getEventList() != null) {
-            updateDayEvents();
+            updateDayEvents(); // Refresh the events
         }
+
+        // Bring the day view to the front if needed
+        SwingUtilities.invokeLater(() -> {
+            frame.setVisible(true);
+            frame.toFront();
+        });
     }
+
 
     public String getViewName() {
         return viewName;

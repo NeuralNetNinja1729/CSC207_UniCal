@@ -21,7 +21,6 @@ public class DeleteEventPresenter implements DeleteEventOutputBoundary {
   @Override
   public void prepareSuccessView(DeleteEventOutputData outputData) {
     // Update the current state
-    System.out.println("Successfully added event");
     Event event = outputData.getEvent();
     String eventName = event.getEventName();
     String calendarApiName = event.getCalendarApi().getCalendarApiName();

@@ -13,6 +13,9 @@ public class DeleteEventController {
   }
 
   public void execute(Event event, Calendar calendar) {
+
+    // Find the opening and closing parentheses
+
     final DeleteEventInputData deleteEventInputData = new DeleteEventInputData(event, calendar);
     deleteEventUseCaseInteractor.execute(deleteEventInputData);
   }

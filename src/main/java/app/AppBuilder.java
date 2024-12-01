@@ -16,6 +16,7 @@ import entity.Calendar;
 import interface_adapter.ViewManagerModel;
 import interface_adapter.add_event.AddEventController;
 import interface_adapter.change_calendar_day.ChangeCalendarDayController;
+import interface_adapter.change_calendar_day.ChangeCalendarDayState;
 import interface_adapter.change_calendar_day.ChangeCalendarDayViewModel;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthController;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthState;
@@ -111,6 +112,7 @@ public class AppBuilder {
 
     /**
      * Adds the Change Calendar Month View to the application.
+     *
      * @return this builder
      */
     public AppBuilder addChangeCalendarMonthView() {
@@ -132,6 +134,7 @@ public class AppBuilder {
 
     /**
      * Adds the Change Calendar Day View to the application.
+     *
      * @return this builder
      */
     public AppBuilder addChangeCalendarDayView() {
@@ -143,11 +146,13 @@ public class AppBuilder {
 
     /**
      * Adds the Change Calendar Month Use Case to the application.
+     *
      * @return this builder
      */
     public AppBuilder addChangeCalendarMonthUseCase() {
         ChangeCalendarMonthPresenter monthPresenter = new ChangeCalendarMonthPresenter(monthViewModel, viewManagerModel);
-        ChangeCalendarMonthInteractor monthInteractor = new ChangeCalendarMonthInteractor(dataAccessObjectFactory, monthPresenter);
+        ChangeCalendarMonthInteractor monthInteractor = new ChangeCalendarMonthInteractor(dataAccessObjectFactory,
+                monthPresenter);
         ChangeCalendarMonthController monthController = new ChangeCalendarMonthController(monthInteractor);
         monthView.setChangeCalendarMonthController(monthController);
         return this;
@@ -155,6 +160,7 @@ public class AppBuilder {
 
     /**
      * Adds the Change Calendar Day Use Case to the application.
+     *
      * @return this builder
      */
     public AppBuilder addChangeCalendarDayUseCase() {
@@ -163,12 +169,13 @@ public class AppBuilder {
                 dayPresenter);
         ChangeCalendarDayController dayController = new ChangeCalendarDayController(dayInteractor);
         dayView.setChangeCalendarDayController(dayController);
-        monthView.setDayController(dayController);  // Ensure Month View also has a reference to day controller
+        monthView.setChangeCalendarDayController(dayController);  // Ensure Month View also has a reference to day controller
         return this;
     }
 
     /**
      * Adds the Add Event Use Case to the application.
+     *
      * @return this builder
      */
     public AppBuilder addAddEventUseCase() {
@@ -181,6 +188,7 @@ public class AppBuilder {
 
     /**
      * Adds the Delete Event Use Case to the application.
+     *
      * @return this builder
      */
     public AppBuilder addDeleteEventUseCase() {
@@ -193,7 +201,8 @@ public class AppBuilder {
     }
 
     /**
-     * Creates the JFrame for the application and initially sets the Change Calendar Month View to be displayed.
+     * Creates the JFrame for the application and initially sets the Change Calendar Day View to be displayed.
+     *
      * @return the application
      */
     public JFrame build() {
@@ -201,11 +210,25 @@ public class AppBuilder {
         application.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         application.setSize(1000, 700);
 
-        // Add card panel and set the initial view to the Change Calendar Month View
+        // Add card panel and set the initial view to the Change Calendar Day View
         application.add(cardPanel);
-        viewManagerModel.setState(monthView.getViewName());
-        viewManagerModel.firePropertyChanged();
+
+        // Set initial state for the day view
+        ChangeCalendarDayState initialDayState = new ChangeCalendarDayState();
+        initialDayState.setGoogleCalendar(googleCalendar);
+        initialDayState.setNotionCalendar(notionCalendar);
+        initialDayState.setOutlookCalendar(outlookCalendar);
+        initialDayState.setCurrCalendarList(List.of(googleCalendar, notionCalendar, outlookCalendar));
+        initialDayState.setCurrMonth("December"); // Example month
+        initialDayState.setCurrDay(1); // Example day
+        initialDayState.setCurrYear(2024); // Example year
+        dayViewModel.setState(initialDayState);
+
+        // Set the initial view in the ViewManagerModel
+        viewManagerModel.setState(dayView.getViewName());
+        viewManagerModel.firePropertyChanged(); // Notify view manager of the initial state
 
         return application;
     }
 }
+
