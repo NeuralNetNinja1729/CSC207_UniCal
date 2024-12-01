@@ -257,5 +257,6 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
     }
 
     public void setChangeCalendarDayController(ChangeCalendarDayController dayController) {
+        this.dayController = dayController;
     }
 }

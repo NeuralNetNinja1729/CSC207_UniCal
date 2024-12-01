@@ -121,9 +121,6 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
         populateDaySelector();
     }
 
-    public void setController(ChangeCalendarDayController controller) {
-        this.controller = controller;
-    }
 
     private void handleCalendarSelection(String calendarType) {
         ChangeCalendarDayState state = this.viewModel.getState();
@@ -321,5 +318,6 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
     }
 
     public void setDeleteEventController(DeleteEventController deleteEventController) {
+        this.deleteEventController = deleteEventController;
     }
 }

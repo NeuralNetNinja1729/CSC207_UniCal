@@ -31,9 +31,15 @@ public class ChangeCalendarDayController {
         monthNumeric.put("October", "10");
         monthNumeric.put("November", "11");
         monthNumeric.put("December", "12");
-
+        String dayString;
+        if (day >= 10){
+            dayString = day.toString();
+        }
+        else {
+            dayString = "0" + day;
+        }
         String monthNum = monthNumeric.get(month);
-        String date = year + "-" + monthNum + "-" + day;
+        String date = year + "-" + monthNum + "-" + dayString;
 
         final ChangeCalendarDayInputData changeCalDayInpData = new ChangeCalendarDayInputData(
                 calendarList, date);
