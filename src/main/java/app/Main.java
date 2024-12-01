@@ -12,16 +12,19 @@ public class Main {
      */
     public static void main(String[] args) {
         final AppBuilder appBuilder = new AppBuilder();
-        // TODO: add the Logout Use Case to the app using the appBuilder
-        final JFrame application = appBuilder
-                                            .addLoginView()
-                                            .addSignupView()
-                                            .addLoggedInView()
-                                            .addSignupUseCase()
-                                            .addLoginUseCase()
-                                            .addChangePasswordUseCase()
-                                            .addLogoutUseCase()
-                                            .build();
+
+        // Add views
+        appBuilder.addChangeCalendarMonthView()
+                .addChangeCalendarDayView();
+
+        // Add use cases
+        appBuilder.addChangeCalendarDayUseCase()  // Ensure day use case is added before month use case
+                .addChangeCalendarMonthUseCase()
+                .addAddEventUseCase()
+                .addDeleteEventUseCase();
+
+        // Build the application
+        final JFrame application = appBuilder.build();
 
         application.pack();
         application.setVisible(true);

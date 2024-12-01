@@ -32,21 +32,6 @@ public class Event {
         return calendarApi;
     }
 
-    public String getDescription() {
-        // TODO
-        return "";
-    }
-
-    // TODO
-    public LocalTime getStartTime() {
-
-    }
-
-    // TODO
-    public LocalTime getEndTime() {
-
-    }
-
     public String getName() {
         return this.eventName;
     }

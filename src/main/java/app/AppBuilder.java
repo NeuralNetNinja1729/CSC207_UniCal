@@ -1,42 +1,37 @@
 package app;
 
 import java.awt.CardLayout;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.io.IOException;
+import java.util.List;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.WindowConstants;
+import javax.swing.*;
 
-import data_access.InMemoryUserDataAccessObject;
-import entity.CommonUserFactory;
-import entity.UserFactory;
+import data_access.CalendarDataAccessObjectFactory;
+import entity.GoogleCalendar;
+import entity.NotionCalendar;
+import entity.OutlookCalendar;
+import entity.Calendar;
 import interface_adapter.ViewManagerModel;
-import interface_adapter.change_password.ChangePasswordController;
-import interface_adapter.change_password.ChangePasswordPresenter;
-import interface_adapter.change_password.LoggedInViewModel;
-import interface_adapter.login.LoginController;
-import interface_adapter.login.LoginPresenter;
-import interface_adapter.login.LoginViewModel;
-import interface_adapter.logout.LogoutController;
-import interface_adapter.logout.LogoutPresenter;
-import interface_adapter.signup.SignupController;
-import interface_adapter.signup.SignupPresenter;
-import interface_adapter.signup.SignupViewModel;
-import use_case.change_password.ChangePasswordInputBoundary;
-import use_case.change_password.ChangePasswordInteractor;
-import use_case.change_password.ChangePasswordOutputBoundary;
-import use_case.login.LoginInputBoundary;
-import use_case.login.LoginInteractor;
-import use_case.login.LoginOutputBoundary;
-import use_case.logout.LogoutInputBoundary;
-import use_case.logout.LogoutInteractor;
-import use_case.logout.LogoutOutputBoundary;
-import use_case.signup.SignupInputBoundary;
-import use_case.signup.SignupInteractor;
-import use_case.signup.SignupOutputBoundary;
-import view.LoggedInView;
-import view.LoginView;
-import view.SignupView;
+import interface_adapter.add_event.AddEventController;
+import interface_adapter.change_calendar_day.ChangeCalendarDayController;
+import interface_adapter.change_calendar_day.ChangeCalendarDayViewModel;
+import interface_adapter.change_calendar_month.ChangeCalendarMonthController;
+import interface_adapter.change_calendar_month.ChangeCalendarMonthState;
+import interface_adapter.change_calendar_month.ChangeCalendarMonthViewModel;
+import interface_adapter.delete_event.DeleteEventController;
+import use_case.add_event.AddEventInteractor;
+import use_case.change_calendar_day.ChangeCalendarDayInteractor;
+import use_case.change_calendar_month.ChangeCalendarMonthInteractor;
+import use_case.delete_event.DeleteEventInteractor;
+import view.ChangeCalendarDayView;
+import view.ChangeCalendarMonthView;
 import view.ViewManager;
+import interface_adapter.add_event.AddEventPresenter;
+import interface_adapter.change_calendar_day.ChangeCalendarDayPresenter;
+import interface_adapter.change_calendar_month.ChangeCalendarMonthPresenter;
+import interface_adapter.delete_event.DeleteEventPresenter;
 
 /**
  * The AppBuilder class is responsible for putting together the pieces of
@@ -44,140 +39,171 @@ import view.ViewManager;
  * <p/>
  * This is done by adding each View and then adding related Use Cases.
  */
-// Checkstyle note: you can ignore the "Class Data Abstraction Coupling"
-//                  and the "Class Fan-Out Complexity" issues for this lab; we encourage
-//                  your team to think about ways to refactor the code to resolve these
-//                  if your team decides to work with this as your starter code
-//                  for your final project this term.
 public class AppBuilder {
     private final JPanel cardPanel = new JPanel();
     private final CardLayout cardLayout = new CardLayout();
-    // thought question: is the hard dependency below a problem?
-    private final UserFactory userFactory = new CommonUserFactory();
     private final ViewManagerModel viewManagerModel = new ViewManagerModel();
     private final ViewManager viewManager = new ViewManager(cardPanel, cardLayout, viewManagerModel);
+    private CalendarDataAccessObjectFactory dataAccessObjectFactory = new CalendarDataAccessObjectFactory();
 
-    // thought question: is the hard dependency below a problem?
-    private final InMemoryUserDataAccessObject userDataAccessObject = new InMemoryUserDataAccessObject();
+    // Calendars
+    private Calendar googleCalendar;
+    private Calendar notionCalendar;
+    private Calendar outlookCalendar;
 
-    private SignupView signupView;
-    private SignupViewModel signupViewModel;
-    private LoginViewModel loginViewModel;
-    private LoggedInViewModel loggedInViewModel;
-    private LoggedInView loggedInView;
-    private LoginView loginView;
+    // View Models
+    private ChangeCalendarMonthViewModel monthViewModel;
+    private ChangeCalendarDayViewModel dayViewModel;
+
+    // Views
+    private ChangeCalendarMonthView monthView;
+    private ChangeCalendarDayView dayView;
 
     public AppBuilder() {
         cardPanel.setLayout(cardLayout);
+        initializeCalendars();
     }
 
     /**
-     * Adds the Signup View to the application.
+     * Initializes the Google, Notion, and Outlook calendar instances.
+     */
+    private void initializeCalendars() {
+        try {
+            // Google Calendar Initialization
+            String googleCredentials = new String(Files.readAllBytes(
+                    Paths.get("src/main/resources/unical-442813-e8345d894d68.json")));
+
+            googleCalendar = new GoogleCalendar(
+                    googleCredentials,
+                    "calendar-service@unical-442813.iam.gserviceaccount.com",
+                    "UniCal Google Calendar",
+                    "unical.207.test@gmail.com"
+            );
+
+            // Notion Calendar Initialization
+            notionCalendar = new NotionCalendar(
+                    "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",
+                    "148fc62c766b80cda8edeb8afb359493",
+                    "UniCal Notion Calendar"
+            );
+
+            // Outlook Calendar Initialization
+            outlookCalendar = new OutlookCalendar(
+                    "{\n" +
+                            "    \"client_id\": \"4f5baecc-ea4a-42b0-96cd-1af3a9e1351b\",\n" +
+                            "    \"client_secret\": \"N.98Q~CT_pHc4dBcZQyM4GG6Q5g2qHCyh13ECcKE\",\n" +
+                            "    \"tenant_id\": \"consumers\",\n" +
+                            "    \"redirect_uri\": \"http://localhost\"\n" +
+                            "}",
+                    "unical.207.test@outlook.com",
+                    "UniCal Outlook Calendar",
+                    "primary" // or specific calendar ID
+            );
+
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null,
+                    "Error initializing calendars: " + e.getMessage(),
+                    "Initialization Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Adds the Change Calendar Month View to the application.
      * @return this builder
      */
-    public AppBuilder addSignupView() {
-        signupViewModel = new SignupViewModel();
-        signupView = new SignupView(signupViewModel);
-        cardPanel.add(signupView, signupView.getViewName());
+    public AppBuilder addChangeCalendarMonthView() {
+        monthViewModel = new ChangeCalendarMonthViewModel();
+        monthView = new ChangeCalendarMonthView(monthViewModel);
+        cardPanel.add(monthView, monthView.getViewName());
+
+        // Set initial calendar data to the month view model
+        ChangeCalendarMonthState initialState = monthViewModel.getState();
+        initialState.setGoogleCalendar(googleCalendar);
+        initialState.setNotionCalendar(notionCalendar);
+        initialState.setOutlookCalendar(outlookCalendar);
+        initialState.setCurrCalendarList(List.of(googleCalendar, notionCalendar, outlookCalendar));
+        initialState.setActiveCalendar(googleCalendar); // Default active calendar
+        monthViewModel.setState(initialState);
+
         return this;
     }
 
     /**
-     * Adds the Login View to the application.
+     * Adds the Change Calendar Day View to the application.
      * @return this builder
      */
-    public AppBuilder addLoginView() {
-        loginViewModel = new LoginViewModel();
-        loginView = new LoginView(loginViewModel);
-        cardPanel.add(loginView, loginView.getViewName());
+    public AppBuilder addChangeCalendarDayView() {
+        dayViewModel = new ChangeCalendarDayViewModel();
+        dayView = new ChangeCalendarDayView(dayViewModel);
+        cardPanel.add(dayView, dayView.getViewName());
         return this;
     }
 
     /**
-     * Adds the LoggedIn View to the application.
+     * Adds the Change Calendar Month Use Case to the application.
      * @return this builder
      */
-    public AppBuilder addLoggedInView() {
-        loggedInViewModel = new LoggedInViewModel();
-        loggedInView = new LoggedInView(loggedInViewModel);
-        cardPanel.add(loggedInView, loggedInView.getViewName());
+    public AppBuilder addChangeCalendarMonthUseCase() {
+        ChangeCalendarMonthPresenter monthPresenter = new ChangeCalendarMonthPresenter(monthViewModel, viewManagerModel);
+        ChangeCalendarMonthInteractor monthInteractor = new ChangeCalendarMonthInteractor(dataAccessObjectFactory, monthPresenter);
+        ChangeCalendarMonthController monthController = new ChangeCalendarMonthController(monthInteractor);
+        monthView.setChangeCalendarMonthController(monthController);
         return this;
     }
 
     /**
-     * Adds the Signup Use Case to the application.
+     * Adds the Change Calendar Day Use Case to the application.
      * @return this builder
      */
-    public AppBuilder addSignupUseCase() {
-        final SignupOutputBoundary signupOutputBoundary = new SignupPresenter(viewManagerModel,
-                signupViewModel, loginViewModel);
-        final SignupInputBoundary userSignupInteractor = new SignupInteractor(
-                userDataAccessObject, signupOutputBoundary, userFactory);
-
-        final SignupController controller = new SignupController(userSignupInteractor);
-        signupView.setSignupController(controller);
+    public AppBuilder addChangeCalendarDayUseCase() {
+        ChangeCalendarDayPresenter dayPresenter = new ChangeCalendarDayPresenter(dayViewModel, viewManagerModel);
+        ChangeCalendarDayInteractor dayInteractor = new ChangeCalendarDayInteractor(dataAccessObjectFactory,
+                dayPresenter);
+        ChangeCalendarDayController dayController = new ChangeCalendarDayController(dayInteractor);
+        dayView.setChangeCalendarDayController(dayController);
+        monthView.setDayController(dayController);  // Ensure Month View also has a reference to day controller
         return this;
     }
 
     /**
-     * Adds the Login Use Case to the application.
+     * Adds the Add Event Use Case to the application.
      * @return this builder
      */
-    public AppBuilder addLoginUseCase() {
-        final LoginOutputBoundary loginOutputBoundary = new LoginPresenter(viewManagerModel,
-                loggedInViewModel, loginViewModel);
-        final LoginInputBoundary loginInteractor = new LoginInteractor(
-                userDataAccessObject, loginOutputBoundary);
-
-        final LoginController loginController = new LoginController(loginInteractor);
-        loginView.setLoginController(loginController);
+    public AppBuilder addAddEventUseCase() {
+        AddEventPresenter addEventPresenter = new AddEventPresenter(dayViewModel, viewManagerModel);
+        AddEventInteractor addEventInteractor = new AddEventInteractor(dataAccessObjectFactory, addEventPresenter);
+        AddEventController addEventController = new AddEventController(addEventInteractor);
+        dayView.setAddEventController(addEventController);
         return this;
     }
 
     /**
-     * Adds the Change Password Use Case to the application.
+     * Adds the Delete Event Use Case to the application.
      * @return this builder
      */
-    public AppBuilder addChangePasswordUseCase() {
-        final ChangePasswordOutputBoundary changePasswordOutputBoundary =
-                new ChangePasswordPresenter(loggedInViewModel);
-
-        final ChangePasswordInputBoundary changePasswordInteractor =
-                new ChangePasswordInteractor(userDataAccessObject, changePasswordOutputBoundary, userFactory);
-
-        final ChangePasswordController changePasswordController =
-                new ChangePasswordController(changePasswordInteractor);
-        loggedInView.setChangePasswordController(changePasswordController);
+    public AppBuilder addDeleteEventUseCase() {
+        DeleteEventPresenter deleteEventPresenter = new DeleteEventPresenter(dayViewModel, viewManagerModel);
+        DeleteEventInteractor deleteEventInteractor = new DeleteEventInteractor(dataAccessObjectFactory,
+                deleteEventPresenter);
+        DeleteEventController deleteEventController = new DeleteEventController(deleteEventInteractor);
+        dayView.setDeleteEventController(deleteEventController);
         return this;
     }
 
     /**
-     * Adds the Logout Use Case to the application.
-     * @return this builder
-     */
-    public AppBuilder addLogoutUseCase() {
-        final LogoutOutputBoundary logoutOutputBoundary = new LogoutPresenter(viewManagerModel,
-                loggedInViewModel, loginViewModel);
-
-        final LogoutInputBoundary logoutInteractor =
-                new LogoutInteractor(userDataAccessObject, logoutOutputBoundary);
-
-        final LogoutController logoutController = new LogoutController(logoutInteractor);
-        loggedInView.setLogoutController(logoutController);
-        return this;
-    }
-
-    /**
-     * Creates the JFrame for the application and initially sets the SignupView to be displayed.
+     * Creates the JFrame for the application and initially sets the Change Calendar Month View to be displayed.
      * @return the application
      */
     public JFrame build() {
-        final JFrame application = new JFrame("Login Example");
+        final JFrame application = new JFrame("UniCal - Calendar View");
         application.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        application.setSize(1000, 700);
 
+        // Add card panel and set the initial view to the Change Calendar Month View
         application.add(cardPanel);
-
-        viewManagerModel.setState(signupView.getViewName());
+        viewManagerModel.setState(monthView.getViewName());
         viewManagerModel.firePropertyChanged();
 
         return application;

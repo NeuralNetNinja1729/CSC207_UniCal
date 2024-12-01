@@ -1,7 +1,9 @@
 package view;
 
+import entity.Calendar;
 import interface_adapter.change_calendar_day.ChangeCalendarDayController;
 import interface_adapter.change_calendar_day.ChangeCalendarDayState;
+import interface_adapter.change_calendar_day.ChangeCalendarDayViewModel;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthController;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthState;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthViewModel;
@@ -37,7 +39,6 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
     private ChangeCalendarMonthController monthController;
     private ChangeCalendarDayController dayController;
 
-
     public ChangeCalendarMonthView(ChangeCalendarMonthViewModel viewModel) {
         this.viewModel = viewModel;
         this.viewModel.addPropertyChangeListener(this);
@@ -63,7 +64,6 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
         googleButton.addActionListener(evt -> handleCalendarSelection("Google"));
         outlookButton.addActionListener(evt -> handleCalendarSelection("Outlook"));
         notionButton.addActionListener(evt -> handleCalendarSelection("Notion"));
-
 
         sidePanel.add(googleButton);
         sidePanel.add(outlookButton);
@@ -106,6 +106,9 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
         frame.setVisible(true);
     }
 
+    public void setDayController(ChangeCalendarDayController dayController) {
+        this.dayController = dayController;
+    }
 
     private void handleCalendarSelection(String calendarType) {
         ChangeCalendarMonthState state = viewModel.getState();
@@ -134,7 +137,7 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
         calendarPanel.removeAll();
 
         // Retrieve events from the state
-        ChangeCalendarMonthState state = viewModel.getState();
+        ChangeCalendarMonthState state = this.viewModel.getState();
         Map<String, String> eventsByDate = state.getEventMap();
 
         // List of days from Sunday to Saturday
@@ -197,7 +200,7 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
             dayButton.add(eventPanel, BorderLayout.CENTER);
 
             // Add an ActionListener to handle day selection
-            Integer currDay = (Integer) day;
+            Integer currDay = day;
             dayButton.addActionListener(evt -> handleDaySelection(selectedYear, selectedMonth, currDay));
 
             calendarPanel.add(dayButton);
@@ -209,6 +212,10 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
     }
 
     private void handleDaySelection(Integer year, Month month, Integer day) {
+        if (dayController == null) {
+            throw new NullPointerException("Day controller is not set. Make sure to initialize the controller.");
+        }
+
         ChangeCalendarMonthState state = viewModel.getState();
         ChangeCalendarDayState dayState = new ChangeCalendarDayState();
 
@@ -222,32 +229,13 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
 
         dayController.execute(dayState.getCurrCalendarList(), dayState.getCurrMonth(), dayState.getCurrDay(),
                 dayState.getCurrYear());
-        // this method may need to be changed, not sure exactly how to call the day use case, alternative approach
-        // would be to use the parameters of the month view along with the day parameter passed to the method to call
-        // the controller's execute method
-
     }
 
-    public String getViewName() {
-        return viewName;
-    }
-
-    /**
-     * Invoked when an action occurs.
-     *
-     * @param e the event to be processed
-     */
     @Override
     public void actionPerformed(ActionEvent e) {
         System.out.println("Click " + e.getActionCommand());
     }
 
-    /**
-     * This method gets called when a bound property is changed.
-     *
-     * @param evt A PropertyChangeEvent object describing the event source
-     *            and the property that has changed.
-     */
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         ChangeCalendarMonthState state = (ChangeCalendarMonthState) evt.getNewValue();
@@ -256,20 +244,18 @@ public class ChangeCalendarMonthView extends JPanel implements ActionListener, P
         }
     }
 
-    public ChangeCalendarDayController getDayController() {
-        return dayController;
-    }
-
-    public void setDayController(ChangeCalendarDayController dayController) {
-        this.dayController = dayController;
-    }
-
-    public ChangeCalendarMonthController getMonthController() {
-        return this.monthController;
-    }
-
-
-    public void setMonthController(ChangeCalendarMonthController monthController) {
+    public void setChangeCalendarMonthController(ChangeCalendarMonthController monthController) {
         this.monthController = monthController;
+    }
+
+    public ChangeCalendarDayController getDayController() {
+        return this.dayController;
+    }
+
+    public String getViewName() {
+        return viewName;
+    }
+
+    public void setChangeCalendarDayController(ChangeCalendarDayController dayController) {
     }
 }

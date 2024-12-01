@@ -89,7 +89,6 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
             yearSelector.addItem(year);
         }
         daySelector = new JComboBox<>();
-        populateDaySelector();
 
         monthSelector.addActionListener(e -> populateDaySelector());
         yearSelector.addActionListener(e -> populateDaySelector());
@@ -109,6 +108,7 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
         eventsPanel.setLayout(new BorderLayout());
         eventsPanel.setBackground(Color.WHITE);
 
+        // Initialize the events list
         eventsList = new JList<>();
         eventsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane scrollPane = new JScrollPane(eventsList);
@@ -117,11 +117,8 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
 
         frame.add(eventsPanel, BorderLayout.CENTER);
 
-        // Initialize the day view
-        updateDayEvents();
-
-        // Make the frame visible
-        frame.setVisible(true);
+        // Populate the day selector only after initializing all components
+        populateDaySelector();
     }
 
     public void setController(ChangeCalendarDayController controller) {
@@ -317,5 +314,12 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
 
     public void setAddEventController(AddEventController addEventController) {
         this.addEventController = addEventController;
+    }
+
+    public void setChangeCalendarDayController(ChangeCalendarDayController dayController) {
+        this.controller = dayController;
+    }
+
+    public void setDeleteEventController(DeleteEventController deleteEventController) {
     }
 }

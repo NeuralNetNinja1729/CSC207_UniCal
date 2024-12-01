@@ -86,5 +86,8 @@ public class ChangeCalendarMonthState {
     public void setOutlookCalendar(Calendar outlookCalendar) {
         this.outlookCalendar = outlookCalendar;
     }
+
+    public void setActiveCalendar(Calendar googleCalendar) {
+    }
 }
 
