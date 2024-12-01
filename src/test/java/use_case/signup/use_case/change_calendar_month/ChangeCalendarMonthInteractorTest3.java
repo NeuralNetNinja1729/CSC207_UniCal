@@ -1,4 +1,4 @@
-package use_case.change_calendar_month;
+package use_case.signup.use_case.change_calendar_month;
 
 import data_access.CalendarDataAccessObjectFactory;
 import entity.Calendar;
@@ -7,6 +7,8 @@ import interface_adapter.change_calendar_month.ChangeCalendarMonthPresenter;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthViewModel;
 import org.junit.Before;
 import org.junit.Test;
+import use_case.change_calendar_month.ChangeCalendarMonthInputData;
+import use_case.change_calendar_month.ChangeCalendarMonthInteractor;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -18,7 +20,7 @@ public class ChangeCalendarMonthInteractorTest3 {
 
   @Before
   public void setUp() {
-    ChangeCalendarMonthPresenter presenter = new ChangeCalendarMonthPresenter( new ChangeCalendarMonthViewModel());
+    ChangeCalendarMonthPresenter presenter = new ChangeCalendarMonthPresenter(new ChangeCalendarMonthViewModel());
     interactor = new ChangeCalendarMonthInteractor(new CalendarDataAccessObjectFactory(), presenter);
   }
 
