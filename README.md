@@ -1,181 +1,184 @@
-# Lab 5: Logout
+# 📅 UniCal - Universal Calendar Integration
 
-## Preamble
+### A Unified Calendar Application that seamlessly integrates Google Calendar, Notion, and Outlook calendars into a Single, Powerful Interface.
 
-In the current homework, you added code to the login use case to save the currently-logged-in
-user by saving the user in the Data Access Layer. You also added a unit test for this.
+---
+*Authors:*
+- Aarav Tandon
+- Aryan Aneja
+- Ashish Ajin Thomas
+- Raviit Vij
+- Vishwesh Manishbhai Patel
 
-In this lab, you will complete a logout use case as a team. You will also begin to discuss your project
-and the use cases that need to be implemented. 
+## 📑 Table of Contents
+- [Project Overview](#project-overview)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Technical Requirements](#technical-requirements)
+- [Installation Guide](#installation-guide)
+- [Usage Guide](#usage-guide)
+- [Contributing](#contributing)
+- [Feedback](#feedback)
+- [License](#license)
 
-We have created all the Clean Architecture classes necessary for the logout use case.
+## 🎯Project Overview
+UniCal solves the common problem of managing multiple calendars across different platforms. By bringing together Google Calendar, Notion, and Outlook calendars into a unified interface, users can view and manage all their events in one place without constantly switching between applications.
 
-By Friday, your team will submit:
-- your completed lab code [for credit]
-- a draft of your project blueprint proposal. [required, but not for credit]
+### Why UniCal?
+- Eliminates the need to check multiple calendar applications
+- Provides a consistent interface for all calendar operations
+- Saves time and reduces the risk of scheduling conflicts
+- Built using Clean Architecture principles for maintainability and extensibility
 
-# Phase 2 [for credit]
-_(recall, Phase 1 was your solo task of adding the storage of the currently-logged-in user)_
+## ✨Features
 
-## Task 0: Fork this repo on GitHub
-**To get started, one team member should fork this repo on GitHub and share it with the team. 
-All of you should then clone it.**
+### 1. Unified Calendar View
+- Monthly calendar display with event previews
+- Color-coded events based on source calendar
+- Quick navigation between month and day view
 
-* * *
+### 2. Day View Management
+- Detailed daily event listing
+- Add, view, and delete events
+- Real-time synchronization with source calendars
 
-Suggested logistics: One of you should invite the others to collaborate on their fork of the
-original repo on GitHub. You can do this in your repo on GitHub under `Settings -> Collaborators`.
-This will allow you to push branches to a common repo and then use pull requests to contribute
-your code and review. To prevent others from pushing directly to the main branch,
-we recommend you set branch protection rules on GitHub. Below are how the settings might look if you
-add branch protection rules:
+### 3. Multi-Calendar Support
+- Google Calendar integration
+- Notion Calendar integration
+- Outlook Calendar integration
+- Easy switching between calendar services
 
-![image of branch protection rules for main with the
-requirement of two approvers to merge in pull requests.
-](images/branch_protection_rules.png)
+## 📸Screenshots
 
-* * *
+[//]: # ([Note: Add screenshots here showing:)
 
-Open the project in IntelliJ and make sure you can successfully run `app/Main.java`.
-Note: you may need to set the Project SDK in the `Project Structure...` menu, and possibly
-also manually link the Maven project, as you did in Phase 1.
+[//]: # (1. Monthly calendar view)
 
-## Task 1: Understanding the Program
+[//]: # (2. Daily event view)
 
-You may notice that we have refactored the CA engine code _slightly_ since Phase 1, but the
-way we build the engine is drastically different: we have switched from using Factories to
-using the Builder design pattern, which we'll be discussing in lecture soon. 
+[//]: # (3. Add event interface)
 
-Open up `app.Main` and read it as a team.
-- What are the Views and what are the current Use Cases?
-- Which Uses Cases are triggered from each View?
-- Which version of the DAO is `app.Main` using?
+[//]: # (4. Calendar selection interface])
 
-The major change since Phase 1 is that we have added the `app.AppBuilder` class which makes
-it easier to understand how our CA engine is being constructed — it also makes `app.Main` nice and concise!
-- Why do all those `addX` methods end in `return this;`? 
+## 🛠Technical Requirements
 
-Run the program and make sure the signup and login Use Cases work.
+### Dependencies
+- Google Calendar API Client Library v4.0+
+- Microsoft Graph API SDK v5.0+
+- OkHttp3
+- JSON libraries (org.json)
 
-Currently, you'll notice that the "Log Out" button still doesn't actually log you out. It's time to fix
-that button, which is part of the `LoggedInView`.
-We have created all the classes for you, but some of the code is missing.
-As a team, your task is to fill in the missing code so that the Logout Use Case is implemented.
-**The next part of the readme describes how your team will do this.**
+## 📥Installation Guide
 
-* * *
+### 1. Prerequisites Installation
+bash
+# Install Java 8 or higher
+java -version  # Verify Java installation
 
-**Your team will know when you are done when:**
+# Download project dependencies
+mvn install    # If using Maven
 
-- Clicking the "Log Out" button takes the user back to the Login View when you use the program.
-- The provided `LogoutInteractorTest` test passes.
 
-The "Log Out" button is an instance variable in class `LoggedInVew`. Go find it.
-Also look at the `interface_adapter.change_password.LoggedInViewModel`, which contains any
-data showing on the `LoggedInVew`.
+### 2. API Credentials Setup
 
-* * *
+#### Google Calendar
+1. Create a project in Google Cloud Console
+2. Enable Calendar API
+3. Create service account credentials
+4. Save credentials as JSON:
+   json
+   {
+   "type": "service_account",
+   "project_id": "your-project-id",
+   ...
+   }
 
-## Task 2: Dividing up the work
 
-There are `TODO` comments left in the files
-Recall that you can use the TODO tool window to conveniently pull up a complete list.
+#### Notion
+1. Create an integration in Notion
+2. Configure database access
+3. Save authentication token:
 
-Once the TODOs are all complete, the "Log Out" button _should_ work!
+Authentication Token: your_notion_token
+Database ID: your_database_id
 
-As a team, split up the TODOs (see below) between the members of your team.
 
-There are TODOs in seven of the files.
-Make sure each member has at least one TODO which they will be responsible for completing.
-If your team prefers to work in pairs, that is fine too. Your individual branches
-will not be graded for this — only the final, working version.
+#### Outlook
+1. Register application in Azure Portal
+2. Configure OAuth settings
+3. Save credentials:
+   json
+   {
+   "client_id": "your_client_id",
+   "client_secret": "your_client_secret",
+   "tenant_id": "your_tenant_id",
+   "redirect_uri": "http://localhost"
+   }
 
-The TODOs are summarized below (by file) to help your team decide how to split them up:
 
-* * *
+### 3. Application Setup
+bash
+# Clone the repository
+`git clone https://github.com/NeuralNetNinja1729/CSC207_UniCal.git`
 
-- `Main.java`
+`cd unical`
 
-  - [ ] TODO: add the Logout Use Case to the app using the appBuilder
+# Compile & Run the project
+Run `src/main/java/app/Main.java`
 
-* * *
 
-- `LoggedInView.java` (tip: refer to the other views for similar code)
+## 📖Usage Guide
 
-  - [ ] TODO: save the logout controller in the instance variable.
-  - [ ] TODO: execute the logout use case through the Controller
+### Basic Operations
+1. *Switch Between Calendars*
+    - Click calendar buttons on the left panel
+    - Only one calendar active at a time
 
-* * *
+2. *Navigate Calendar*
+    - Use month/year dropdowns at top
+    - Click on any date to view daily events
 
-- `LogoutController.java` (tip: refer to the other controllers for similar code)
+3. *Add Events*
+   - In Day View Click Add Event and Fill in the details.
 
-  - [ ] TODO: Save the interactor in the instance variable.
-  - [ ] TODO: run the use case interactor for the logout use case
+4. *Delete Events*
+   - In Day View CLick on Event and Click Delete Event.
 
-* * *
+## 🤝Contributing
 
-- `LogoutInputData.java` (should be done with the LogoutInteractor TODOs below)
+### Getting Started
+1. Fork the repository
+2. Create feature branch: git checkout -b feature/YourFeature
+3. Commit changes: git commit -m 'Add YourFeature'
+4. Push to the branch: git push origin feature/YourFeature
+5. Submit a Pull Request
 
-  - [ ] TODO: save the current username in an instance variable and add a getter.
+### Guidelines
+- Follow existing code style and architecture
+- Include unit tests for new features
+- Update documentation as needed
+- One feature per pull request
 
-- `LogoutInteractor.java` (tip: refer to `ChangePasswordInteractor.java` for similar code)
+### Review Process
+1. Code review by maintainers
+2. Automated tests must pass
+3. Documentation must be updated
+4. Changes must follow Clean Architecture principles
 
-  - [ ] TODO: save the DAO and Presenter in the instance variables.
-  - [ ] TODO: implement the logic of the Logout Use Case
+## 💭Feedback
 
-* * *
+We welcome your feedback to improve UniCal!
 
-- `LogoutOutputData.java`
+Please include:
+- Clear description of the issue/suggestion
+- Steps to reproduce (for bugs)
+- Expected vs actual behavior
+- Screenshots if applicable
 
-  - [ ] TODO: save the parameters in the instance variables.
+## 📄License
 
-* * *
+This project is licensed under the Creative Commons Zero v1.0 Universal License. See the [LICENSE](LICENSE) file for details.
 
-- `LogoutPresenter.java` (tip: refer to `SignupPresenter.java` for similar code)
+---
 
-  - [ ] TODO: assign to the three instance variables.
-  - [ ] TODO: have prepareSuccessView update the LoggedInState
-  - [ ] TODO: have prepareSuccessView update the LoginState
-
-* * *
-
-1. Make a branch named the first part of your UofT email address, everything before the `@`.
-For example, if your email address is `paul.gries@mail.utoronto.ca`, then the branch name would
-be `paul.gries`.
-
-Make sure you switch to the new branch.
-
-In the terminal, this would look like below, but replaced with your own information:
-```
-git branch paul.gries
-git switch paul.gries
-```
-
-2. Complete your assigned TODOs and make a pull request on GitHub. In your pull request,
-   briefly describe what your TODOs were and how you implemented them. If you aren't sure
-   about part of it, include this in your pull request so everyone knows what to look
-   for when reviewing — or you can of course discuss with your team before making your
-   pull request since you are physically working in the same space.
-   - **Important: don't push any changes to the `.idea` folder, as that
-     may cause issues for your other teammates, as some files contain
-     configurations specific to your individual IntelliJ projects.**
-
-3. Review each other's pull requests to ensure each TODO is correctly implemented and that
-   there are no Checkstyle issues in the files that were modified.
-
-4. Once all TODOs are completed, your team should debug as needed to ensure the
-   correctness of the code. Setting a breakpoint where the log-out use case
-   interactor starts its work will likely be a great place to start when debugging.
-
-And that's it; you now have a working Logout Use Case! Instructions for
-how to submit your work on MarkUs will be posted later.
-
-Your team should spend the rest of the lab working on your project blueprint.
-
-* * *
-
-# Project Blueprint
-
-See Quercus for details about the project blueprint! By the end of the week,
-the goal is for your team to have a fully drafted blueprint so that your team
-will be ready to get started on your project after Reading Week.
+*Note*: This project is under active development. Features and documentation may be updated frequently.
