@@ -214,18 +214,26 @@ public class AppBuilder {
         application.add(cardPanel);
 
         // Set initial state for the day view
+        ChangeCalendarMonthState initialMonthState = new ChangeCalendarMonthState();
+        initialMonthState.setGoogleCalendar(googleCalendar);
+        initialMonthState.setNotionCalendar(notionCalendar);
+        initialMonthState.setOutlookCalendar(outlookCalendar);
+        initialMonthState.setCurrCalendarList(List.of(googleCalendar));
+        initialMonthState.setCurrMonth("December"); // Example month
+        initialMonthState.setCurrYear(2024); // Example year
+        monthViewModel.setState(initialMonthState);
+
         ChangeCalendarDayState initialDayState = new ChangeCalendarDayState();
         initialDayState.setGoogleCalendar(googleCalendar);
         initialDayState.setNotionCalendar(notionCalendar);
         initialDayState.setOutlookCalendar(outlookCalendar);
-        initialDayState.setCurrCalendarList(List.of(googleCalendar, notionCalendar, outlookCalendar));
+        initialDayState.setCurrCalendarList(List.of(googleCalendar));
         initialDayState.setCurrMonth("December"); // Example month
-        initialDayState.setCurrDay(1); // Example day
         initialDayState.setCurrYear(2024); // Example year
         dayViewModel.setState(initialDayState);
 
         // Set the initial view in the ViewManagerModel
-        viewManagerModel.setState(dayView.getViewName());
+        viewManagerModel.setState(monthView.getViewName());
         viewManagerModel.firePropertyChanged(); // Notify view manager of the initial state
 
         return application;
