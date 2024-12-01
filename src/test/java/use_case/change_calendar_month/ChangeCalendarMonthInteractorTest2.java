@@ -3,7 +3,9 @@ package use_case.change_calendar_month;
 import data_access.CalendarDataAccessObjectFactory;
 import entity.Calendar;
 import entity.GoogleCalendar;
+import interface_adapter.ViewManagerModel;
 import interface_adapter.change_calendar_month.ChangeCalendarMonthPresenter;
+import interface_adapter.change_calendar_month.ChangeCalendarMonthViewModel;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,7 +19,7 @@ public class ChangeCalendarMonthInteractorTest2 {
 
   @Before
   public void setUp() throws Exception {
-    ChangeCalendarMonthPresenter presenter = new ChangeCalendarMonthPresenter();
+    ChangeCalendarMonthPresenter presenter = new ChangeCalendarMonthPresenter(new ChangeCalendarMonthViewModel());
     interactor = new ChangeCalendarMonthInteractor(new CalendarDataAccessObjectFactory(), presenter);
   }
 

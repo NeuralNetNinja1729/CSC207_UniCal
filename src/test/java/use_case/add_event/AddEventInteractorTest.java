@@ -4,6 +4,8 @@ import data_access.CalendarDataAccessObjectFactory;
 import entity.Calendar;
 import entity.NotionCalendar;
 import interface_adapter.add_event.AddEventPresenter;
+import interface_adapter.add_event.AddEventViewModel;
+import interface_adapter.change_calendar_day.ChangeCalendarDayViewModel;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,7 +15,7 @@ public class AddEventInteractorTest {
 
     @Before
     public void setUp() throws Exception {
-        AddEventPresenter presenter = new AddEventPresenter();
+        AddEventPresenter presenter = new AddEventPresenter(new AddEventViewModel(), new ChangeCalendarDayViewModel());
         interactor = new AddEventInteractor(new CalendarDataAccessObjectFactory(), presenter);
     }
 

@@ -16,11 +16,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import okhttp3.*;
 
 /**
  * Data Access Object for Notion Calendar.
  */
-public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterface, AddEventDataAccessInterface {
+public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterface, AddEventDataAccessInterface, DeleteEventDataAccessInterface {
 
     private static final String DATE_PROPERTY_NAME = "Due Date";
     private static final String DATE = "date";
@@ -272,6 +273,145 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
         connection.setDoOutput(true);
 
         return connection;
+    }
+
+
+    @Override
+    public boolean deleteEvent(Event event) {
+        boolean result = false;
+        try {
+            // Get the Notion API key and page ID from the event object
+            final String notionApiKey = calendar.getNotionToken();
+            final String pageId = getEventID(event);
+
+            // Create a connection to the Notion API
+            final int responseCode = createDeleteEventConnection(notionApiKey, pageId);
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                result = true;
+            } else {
+                System.out.println("Failed to delete event! Response code: " + responseCode);
+            }
+        } catch (Exception exception) {
+            System.err.println("Error deleting event: " + exception.getMessage());
+            exception.printStackTrace();
+        }
+        return result;
+    }
+
+    public String getEventID(Event event) {
+        String pageId = null;
+        try {
+            // Prepare request details
+            final String notionApiKey = calendar.getNotionToken();
+            final String dbId = calendar.getDatabaseID();
+            final LocalDate eventDate = event.getDate();
+            final String eventName = event.getEventName();
+
+            // Create request payload to filter events for the specific date
+            final JSONObject requestData = new JSONObject();
+            final JSONObject dateFilter = new JSONObject()
+                    .put(PROPERTY, DATE_PROPERTY_NAME)
+                    .put(DATE, new JSONObject().put("equals", DateUtils.getDateString(eventDate)));
+
+            requestData.put("filter", new JSONObject().put("and", new JSONArray().put(dateFilter)));
+
+            // Create a connection to the Notion API
+            final HttpURLConnection connection = createConnection(notionApiKey, dbId);
+
+            // Send the request
+            sendRequest(connection, requestData);
+
+            // Handle the response
+            final int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                final String response = getResponse(connection);
+
+                // Parse the response to find the matching page
+                final JSONObject res = new JSONObject(response);
+                final JSONArray results = res.getJSONArray("results");
+
+                for (int i = 0; i < results.length(); i++) {
+                    final JSONObject result = results.getJSONObject(i);
+                    final JSONObject properties = result.getJSONObject("properties");
+
+                    final String pageName = properties.getJSONObject("Name")
+                            .getJSONArray(TITLE)
+                            .getJSONObject(0)
+                            .getString("plain_text");
+
+                    // Check if the event name matches
+                    if (pageName.equals(eventName)) {
+                        pageId = result.getString("id");
+                        break;
+                    }
+                }
+            } else {
+                System.out.println("Failed to fetch pages. Response code: " + responseCode);
+                String errorResponse = getErrorResponse(connection);
+                System.err.println("Error response: " + errorResponse);
+            }
+        } catch (Exception exception) {
+            System.err.println("Error fetching event ID: " + exception.getMessage());
+            exception.printStackTrace();
+        }
+        return pageId;
+    }
+
+
+    private int createDeleteEventConnection(String notionApiKey, String pageId) throws Exception {
+        OkHttpClient client = new OkHttpClient();
+
+        // Construct the URL
+        String url = NOTION_API_BASE_URL + "/pages/" + pageId;
+        System.out.println(url);
+
+        // Create the request body
+        RequestBody body = RequestBody.create(
+                "{\"archived\": true}",
+                MediaType.parse("application/json")
+        );
+
+        // Build the PATCH request
+        Request request = new Request.Builder()
+                .url(url)
+                .patch(body)
+                .addHeader("Authorization", "Bearer " + notionApiKey)
+                .addHeader("Notion-Version", NOTION_API_VERSION)
+                .addHeader("Content-Type", "application/json")
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                System.out.println("Failed to delete event. Response code: " + response.code());
+                // Print the response body for more details
+                System.out.println("Response body: " + response.body().string());
+                return response.code();
+            } else {
+                System.out.println("Event deleted successfully!");
+                System.out.println("Response body: " + response.body().string());
+                return response.code();
+            }
+        } catch (IOException e) {
+            System.out.println("Error while sending the request: " + e.getMessage());
+            return 400;
+        }
+    }
+
+    private String getErrorResponse(HttpURLConnection connection) {
+        String errorResponse = "";
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(connection.getErrorStream()))) {
+            String line;
+            StringBuilder responseBuilder = new StringBuilder();
+            while ((line = reader.readLine()) != null) {
+                responseBuilder.append(line);
+            }
+            errorResponse = responseBuilder.toString();
+        } catch (Exception e) {
+            errorResponse = "Could not read error response";
+        }
+        return errorResponse;
     }
 
 }
