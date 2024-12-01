@@ -73,10 +73,10 @@ UniCal solves the common problem of managing multiple calendars across different
 ### 1. Prerequisites Installation
 bash
 # Install Java 8 or higher
-java -version  # Verify Java installation
+`java -version`  # Verify Java installation
 
 # Download project dependencies
-mvn install    # If using Maven
+`mvn install`    # If using Maven
 
 
 ### 2. API Credentials Setup
@@ -86,12 +86,11 @@ mvn install    # If using Maven
 2. Enable Calendar API
 3. Create service account credentials
 4. Save credentials as JSON:
-   json
-   {
+   `{
    "type": "service_account",
    "project_id": "your-project-id",
    ...
-   }
+   }`
 
 
 #### Notion
@@ -107,13 +106,12 @@ Database ID: your_database_id
 1. Register application in Azure Portal
 2. Configure OAuth settings
 3. Save credentials:
-   json
-   {
+   `{
    "client_id": "your_client_id",
    "client_secret": "your_client_secret",
    "tenant_id": "your_tenant_id",
    "redirect_uri": "http://localhost"
-   }
+   }`
 
 
 ### 3. Application Setup
