@@ -6,7 +6,7 @@ package use_case.change_calendar_day;
 public interface ChangeCalendarDayInputBoundary {
     /**
      * Executes the login use case.
-     * @param inputData the input data
+     * @param changeCalendarDayInputData the input data
      */
-    void execute(ChangeCalendarDayInputData inputData);
+    void execute(ChangeCalendarDayInputData changeCalendarDayInputData);
 }

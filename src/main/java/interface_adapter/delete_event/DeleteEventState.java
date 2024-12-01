@@ -1,29 +1,44 @@
 package interface_adapter.delete_event;
 
-public class DeleteEventState {
-  private String eventName = "";
-  private String errorMessage = "";
+import entity.Event;
 
+public class DeleteEventState {
+  private Event selectedEvent = null;
+  private String error = "";
+  private boolean useCaseFailed = false;
+
+  // Copy constructor for immutability
   public DeleteEventState(DeleteEventState copy) {
-    this.eventName = copy.eventName;
-    this.errorMessage = copy.errorMessage;
+    selectedEvent = copy.selectedEvent;
+    error = copy.error;
+    useCaseFailed = copy.useCaseFailed;
   }
 
+  // Default constructor
   public DeleteEventState() {}
 
-  public String getEventName() {
-    return eventName;
+  // Getters and setters
+  public Event getSelectedEvent() {
+    return selectedEvent;
   }
 
-  public void setEventName(String eventName) {
-    this.eventName = eventName;
+  public void setSelectedEvent(Event event) {
+    this.selectedEvent = event;
   }
 
-  public String getErrorMessage() {
-    return errorMessage;
+  public String getError() {
+    return error;
   }
 
-  public void setErrorMessage(String error) {
-    this.errorMessage = error;
+  public void setError(String error) {
+    this.error = error;
+  }
+
+  public boolean isUseCaseFailed() {
+    return useCaseFailed;
+  }
+
+  public void setUseCaseFailed(boolean useCaseFailed) {
+    this.useCaseFailed = useCaseFailed;
   }
 }

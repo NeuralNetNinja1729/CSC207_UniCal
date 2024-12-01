@@ -3,21 +3,40 @@ package interface_adapter.change_calendar_month;
 import entity.Calendar;
 import entity.Event;
 import entity.User;
-import java.util.List;
+
 import java.util.ArrayList;
+import java.util.List;
 
 public class ChangeCalendarMonthState {
-  private User currentUser;
-  private Calendar googleCalendar;
-  private Calendar notionCalendar;
-  private Calendar outlookCalendar;
-  private Calendar activeCalendar; // Add this field
+  private User currentUser = null;
+  private Calendar googleCalendar = null;
+  private Calendar notionCalendar = null;
+  private Calendar outlookCalendar = null;
+  private Calendar activeCalendar = null;
   private List<Calendar> currCalendarList = new ArrayList<>();
-  private String currMonth;
-  private Integer currYear;
-  private ArrayList<Event> currEvents = new ArrayList<>();;
+  private List<Event> currEvents = new ArrayList<>();
+  private String currMonth = "";
+  private Integer currYear = null;
+  private String error = "";
 
-  // Add getter and setter for activeCalendar
+  // Copy constructor
+  public ChangeCalendarMonthState(ChangeCalendarMonthState copy) {
+    currentUser = copy.currentUser;
+    googleCalendar = copy.googleCalendar;
+    notionCalendar = copy.notionCalendar;
+    outlookCalendar = copy.outlookCalendar;
+    activeCalendar = copy.activeCalendar;
+    currCalendarList = new ArrayList<>(copy.currCalendarList);
+    currEvents = new ArrayList<>(copy.currEvents);
+    currMonth = copy.currMonth;
+    currYear = copy.currYear;
+    error = copy.error;
+  }
+
+  // Default constructor
+  public ChangeCalendarMonthState() {}
+
+  // Getters and setters with defensive copying for collections
   public Calendar getActiveCalendar() {
     return activeCalendar;
   }
@@ -26,77 +45,75 @@ public class ChangeCalendarMonthState {
     this.activeCalendar = calendar;
   }
 
-
-//  private List<Calendar> currCalendarList = new ArrayList<>();
-
-  public void setCurrCalendarList(List<Calendar> calendarList) {
-    // Add validation and proper copying
-    this.currCalendarList = new ArrayList<>(calendarList);
-  }
-
   public List<Calendar> getCurrCalendarList() {
-    // Return defensive copy
     return new ArrayList<>(currCalendarList);
   }
 
-    public void addCalendar(Calendar calendar) {
-        this.currCalendarList.add(calendar);
-    }
+  public void setCurrCalendarList(List<Calendar> calendarList) {
+    this.currCalendarList = new ArrayList<>(calendarList);
+  }
 
-    public String getCurrMonth() {
-        return currMonth;
-    }
+  public List<Event> getCurrEvents() {
+    return new ArrayList<>(currEvents);
+  }
 
-    public void setCurrMonth(String currMonth) {
-        this.currMonth = currMonth;
-    }
+  public void setCurrEvents(List<Event> events) {
+    this.currEvents = new ArrayList<>(events);
+  }
 
-    public Integer getCurrYear() {
-        return currYear;
-    }
+  public String getCurrMonth() {
+    return currMonth;
+  }
 
-    public void setCurrYear(Integer currYear) {
-        this.currYear = currYear;
-    }
+  public void setCurrMonth(String currMonth) {
+    this.currMonth = currMonth;
+  }
 
-    public User getCurrentUser() {
-        return currentUser;
-    }
+  public Integer getCurrYear() {
+    return currYear;
+  }
 
-    public void setCurrentUser(User currentUser) {
-        this.currentUser = currentUser;
-    }
+  public void setCurrYear(Integer currYear) {
+    this.currYear = currYear;
+  }
 
-    public Calendar getGoogleCalendar() {
-        return googleCalendar;
-    }
+  public User getCurrentUser() {
+    return currentUser;
+  }
 
-    public void setGoogleCalendar(Calendar googleCalendar) {
-        this.googleCalendar = googleCalendar;
-    }
+  public void setCurrentUser(User currentUser) {
+    this.currentUser = currentUser;
+  }
 
-    public Calendar getNotionCalendar() {
-        return notionCalendar;
-    }
+  public Calendar getGoogleCalendar() {
+    return googleCalendar;
+  }
 
-    public void setNotionCalendar(Calendar notionCalendar) {
-        this.notionCalendar = notionCalendar;
-    }
+  public void setGoogleCalendar(Calendar googleCalendar) {
+    this.googleCalendar = googleCalendar;
+  }
 
-    public Calendar getOutlookCalendar() {
-        return outlookCalendar;
-    }
+  public Calendar getNotionCalendar() {
+    return notionCalendar;
+  }
 
-    public void setOutlookCalendar(Calendar outlookCalendar) {
-        this.outlookCalendar = outlookCalendar;
-    }
+  public void setNotionCalendar(Calendar notionCalendar) {
+    this.notionCalendar = notionCalendar;
+  }
 
-    public List<Event> getCurrEvents() {
-      return new ArrayList<>(currEvents);
-    }
-  
-    public void setCurrEvents(List<Event> events) {
-      this.currEvents = new ArrayList<>(events);
-    }
+  public Calendar getOutlookCalendar() {
+    return outlookCalendar;
+  }
+
+  public void setOutlookCalendar(Calendar outlookCalendar) {
+    this.outlookCalendar = outlookCalendar;
+  }
+
+  public String getError() {
+    return error;
+  }
+
+  public void setError(String error) {
+    this.error = error;
+  }
 }
-

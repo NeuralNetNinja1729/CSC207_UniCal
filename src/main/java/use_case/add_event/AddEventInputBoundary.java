@@ -6,7 +6,7 @@ package use_case.add_event;
 public interface AddEventInputBoundary {
     /**
      * Executes the login use case.
-     * @param inputData the input data
+     * @param addEventInputData the input data
      */
-    void execute(AddEventInputData inputData);
+    void execute(AddEventInputData addEventInputData);
 }

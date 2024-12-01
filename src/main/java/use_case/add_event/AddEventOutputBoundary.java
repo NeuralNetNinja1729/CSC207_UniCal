@@ -6,13 +6,13 @@ package use_case.add_event;
 public interface AddEventOutputBoundary {
     /**
      * Prepares the success view for the Login Use Case.
-     * @param outputData the output data
+     * @param addEventOutputData the output data
      */
-    void prepareSuccessView(AddEventOutputData outputData);
+    void prepareSuccessView(AddEventOutputData addEventOutputData);
 
     /**
      * Prepares the failure view for the Login Use Case.
-     * @param errorMessage the explanation of the failure
+     * @param error the explanation of the failure
      */
-    void prepareFailView(String errorMessage);
+    void prepareFailView(String error);
 }

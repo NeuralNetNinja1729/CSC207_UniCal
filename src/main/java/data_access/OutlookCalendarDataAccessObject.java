@@ -8,9 +8,7 @@ import entity.OutlookCalendar;
 import okhttp3.Request;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -29,8 +27,8 @@ public class OutlookCalendarDataAccessObject implements GetEventsDataAccessInter
   private void initializeClient() {
     try {
       graphClient = GraphServiceClient.builder()
-        .authenticationProvider(calendar.getAuthProvider())
-        .buildClient();
+              .authenticationProvider(calendar.getAuthProvider())
+              .buildClient();
     } catch (IOException e) {
       System.err.println("Error initializing Outlook Calendar client: " + e.getMessage());
     }
@@ -54,25 +52,22 @@ public class OutlookCalendarDataAccessObject implements GetEventsDataAccessInter
     ArrayList<entity.Event> events = new ArrayList<>();
 
     try {
-      // Format dates for the API
       DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
       String startTime = start.format(formatter);
       String endTime = end.format(formatter);
 
-      // Create query options
       List<QueryOption> requestOptions = new LinkedList<>();
       requestOptions.add(new QueryOption("startDateTime", startTime));
       requestOptions.add(new QueryOption("endDateTime", endTime));
 
-      // Query events using Microsoft Graph API
       graphClient.users(calendar.getAccountName())
-        .calendar()
-        .calendarView()
-        .buildRequest(requestOptions)
-        .select("subject,start,end")
-        .get()
-        .getCurrentPage()
-        .forEach(event -> parseEvent(event, events));
+              .calendar()
+              .calendarView()
+              .buildRequest(requestOptions)
+              .select("subject,start,end")
+              .get()
+              .getCurrentPage()
+              .forEach(event -> parseEvent(event, events));
 
     } catch (ClientException e) {
       System.err.println("Error fetching events: " + e.getMessage());
@@ -84,14 +79,25 @@ public class OutlookCalendarDataAccessObject implements GetEventsDataAccessInter
 
   private void parseEvent(Event outlookEvent, ArrayList<entity.Event> events) {
     try {
-      LocalDate eventDate = LocalDateTime.parse(outlookEvent.start.dateTime)
-        .atZone(ZoneId.of(outlookEvent.start.timeZone))
-        .toLocalDate();
+      // Parse start time
+      ZonedDateTime startZdt = ZonedDateTime.parse(outlookEvent.start.dateTime,
+              DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of(outlookEvent.start.timeZone)));
+
+      // Parse end time
+      ZonedDateTime endZdt = ZonedDateTime.parse(outlookEvent.end.dateTime,
+              DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of(outlookEvent.end.timeZone)));
+
+      // Convert to local date and time
+      LocalDate eventDate = startZdt.toLocalDate();
+      LocalTime startTime = startZdt.toLocalTime();
+      LocalTime endTime = endZdt.toLocalTime();
 
       entity.Event event = new entity.Event(
-        outlookEvent.subject != null ? outlookEvent.subject : "Untitled Event",
-        eventDate,
-        calendar
+              outlookEvent.subject != null ? outlookEvent.subject : "Untitled Event",
+              eventDate,
+              startTime,
+              endTime,
+              calendar
       );
       events.add(event);
     } catch (Exception e) {
@@ -105,21 +111,25 @@ public class OutlookCalendarDataAccessObject implements GetEventsDataAccessInter
       Event outlookEvent = new Event();
       outlookEvent.subject = event.getEventName();
 
+      // Create start time
       com.microsoft.graph.models.DateTimeTimeZone start = new com.microsoft.graph.models.DateTimeTimeZone();
-      start.dateTime = event.getDate().atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+      LocalDateTime startDateTime = LocalDateTime.of(event.getDate(), event.getStartTime());
+      start.dateTime = startDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
       start.timeZone = ZoneId.systemDefault().toString();
       outlookEvent.start = start;
 
+      // Create end time
       com.microsoft.graph.models.DateTimeTimeZone end = new com.microsoft.graph.models.DateTimeTimeZone();
-      end.dateTime = event.getDate().atStartOfDay().plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+      LocalDateTime endDateTime = LocalDateTime.of(event.getDate(), event.getEndTime());
+      end.dateTime = endDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
       end.timeZone = ZoneId.systemDefault().toString();
       outlookEvent.end = end;
 
       graphClient.users(calendar.getAccountName())
-        .calendar()
-        .events()
-        .buildRequest()
-        .post(outlookEvent);
+              .calendar()
+              .events()
+              .buildRequest()
+              .post(outlookEvent);
 
       return true;
     } catch (ClientException e) {

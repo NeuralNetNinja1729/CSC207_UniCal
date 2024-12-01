@@ -10,20 +10,22 @@ public class ChangeCalendarDayState {
   private List<Calendar> calendarList = new ArrayList<>();
   private List<Event> eventList = new ArrayList<>();
   private LocalDate date = LocalDate.now();
-  private String errorMessage = "";
+  private String error = "";
+  private boolean useCaseFailed = false;
 
-  // Copy constructor
+  // Copy constructor for immutability
   public ChangeCalendarDayState(ChangeCalendarDayState copy) {
     this.calendarList = new ArrayList<>(copy.calendarList);
     this.eventList = new ArrayList<>(copy.eventList);
     this.date = copy.date;
-    this.errorMessage = copy.errorMessage;
+    this.error = copy.error;
+    this.useCaseFailed = copy.useCaseFailed;
   }
 
   // Default constructor
   public ChangeCalendarDayState() {}
 
-  // Getters and setters
+  // Getters and setters with defensive copying for collections
   public List<Calendar> getCalendarList() {
     return new ArrayList<>(calendarList);
   }
@@ -48,11 +50,36 @@ public class ChangeCalendarDayState {
     this.date = date;
   }
 
-  public String getErrorMessage() {
-    return errorMessage;
+  public String getError() {
+    return error;
   }
 
-  public void setErrorMessage(String errorMessage) {
-    this.errorMessage = errorMessage;
+  public void setError(String error) {
+    this.error = error;
+  }
+
+  public boolean isUseCaseFailed() {
+    return useCaseFailed;
+  }
+
+  public void setUseCaseFailed(boolean useCaseFailed) {
+    this.useCaseFailed = useCaseFailed;
+  }
+
+  // Helper methods
+  public void addEvent(Event event) {
+    this.eventList.add(event);
+  }
+
+  public void removeEvent(Event event) {
+    this.eventList.remove(event);
+  }
+
+  public boolean hasEvents() {
+    return !eventList.isEmpty();
+  }
+
+  public int getEventCount() {
+    return eventList.size();
   }
 }

@@ -12,18 +12,12 @@ import entity.GoogleCalendar;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 
-/**
- * Data Access Object for Google Calendar.
- */
 public class GoogleCalendarDataAccessObject implements GetEventsDataAccessInterface, AddEventDataAccessInterface, DeleteEventDataAccessInterface {
-
   private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
   private static final String APPLICATION_NAME = "UniCal";
   private final GoogleCalendar calendar;
@@ -41,19 +35,17 @@ public class GoogleCalendarDataAccessObject implements GetEventsDataAccessInterf
 
   private void initializeService() throws GeneralSecurityException, IOException {
     service = new Calendar.Builder(
-      GoogleNetHttpTransport.newTrustedTransport(),
-      JSON_FACTORY,
-      calendar.getHttpRequestInitializer())
-      .setApplicationName(APPLICATION_NAME)
-      .build();
+            GoogleNetHttpTransport.newTrustedTransport(),
+            JSON_FACTORY,
+            calendar.getHttpRequestInitializer())
+            .setApplicationName(APPLICATION_NAME)
+            .build();
   }
 
   @Override
   public ArrayList<entity.Event> fetchEventsDay(LocalDate date) {
-    // Convert LocalDate to DateTime for Google Calendar API
     LocalDateTime startOfDay = date.atStartOfDay();
     LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
-
     return fetchEvents(startOfDay, endOfDay);
   }
 
@@ -71,31 +63,44 @@ public class GoogleCalendarDataAccessObject implements GetEventsDataAccessInterf
       DateTime endDateTime = new DateTime(Date.from(end.atZone(ZoneId.systemDefault()).toInstant()));
 
       Events eventsList = service.events().list(calendar.getCalendarId())
-        .setTimeMin(startDateTime)
-        .setTimeMax(endDateTime)
-        .setOrderBy("startTime")
-        .setSingleEvents(true)
-        .execute();
+              .setTimeMin(startDateTime)
+              .setTimeMax(endDateTime)
+              .setOrderBy("startTime")
+              .setSingleEvents(true)
+              .execute();
 
       for (Event googleEvent : eventsList.getItems()) {
         try {
           EventDateTime eventStart = googleEvent.getStart();
+          EventDateTime eventEnd = googleEvent.getEnd();
+
           LocalDate eventDate;
+          LocalTime startTime;
+          LocalTime endTime;
 
           if (eventStart.getDateTime() != null) {
             // For events with specific times
-            eventDate = Instant.ofEpochMilli(eventStart.getDateTime().getValue())
-              .atZone(ZoneId.systemDefault())
-              .toLocalDate();
+            ZonedDateTime zonedStartTime = Instant.ofEpochMilli(eventStart.getDateTime().getValue())
+                    .atZone(ZoneId.systemDefault());
+            ZonedDateTime zonedEndTime = Instant.ofEpochMilli(eventEnd.getDateTime().getValue())
+                    .atZone(ZoneId.systemDefault());
+
+            eventDate = zonedStartTime.toLocalDate();
+            startTime = zonedStartTime.toLocalTime();
+            endTime = zonedEndTime.toLocalTime();
           } else {
-            // For all-day events, directly parse the date string
+            // For all-day events
             eventDate = LocalDate.parse(eventStart.getDate().toString());
+            startTime = LocalTime.of(0, 0); // Start of day
+            endTime = LocalTime.of(23, 59); // End of day
           }
 
           entity.Event event = new entity.Event(
-            googleEvent.getSummary() != null ? googleEvent.getSummary() : "Untitled Event",
-            eventDate,
-            calendar
+                  googleEvent.getSummary() != null ? googleEvent.getSummary() : "Untitled Event",
+                  eventDate,
+                  startTime,
+                  endTime,
+                  calendar
           );
           events.add(event);
         } catch (Exception e) {
@@ -110,41 +115,36 @@ public class GoogleCalendarDataAccessObject implements GetEventsDataAccessInterf
     return events;
   }
 
-  private void parseEventsFromResponse(Events eventsList, ArrayList<entity.Event> events) {
-    for (Event googleEvent : eventsList.getItems()) {
-      try {
-        // Get event start date
-        DateTime startDateTime = googleEvent.getStart().getDateTime();
-        if (startDateTime == null) {
-          // If dateTime is null, it's an all-day event, use date instead
-          startDateTime = googleEvent.getStart().getDate();
-        }
-
-        // Convert to LocalDate
-        LocalDate eventDate = LocalDate.parse(
-          startDateTime.toStringRfc3339().split("T")[0]
-        );
-
-        // Create and add event
-        entity.Event event = new entity.Event(
-          googleEvent.getSummary(),
-          eventDate,
-          calendar
-        );
-        events.add(event);
-      } catch (Exception e) {
-        System.err.println("Error parsing event: " + e.getMessage());
-      }
-    }
-  }
-
   @Override
   public boolean addEvent(entity.Event event) {
     try {
-      // Create event
-      Event googleEvent = createGoogleEvent(event);
+      Event googleEvent = new Event()
+              .setSummary(event.getEventName());
 
-      // Insert event
+      // Create DateTime for start
+      LocalDateTime startDateTime = LocalDateTime.of(event.getDate(), event.getStartTime());
+      DateTime start = new DateTime(Date.from(
+              startDateTime.atZone(ZoneId.systemDefault()).toInstant()
+      ));
+
+      // Create DateTime for end
+      LocalDateTime endDateTime = LocalDateTime.of(event.getDate(), event.getEndTime());
+      DateTime end = new DateTime(Date.from(
+              endDateTime.atZone(ZoneId.systemDefault()).toInstant()
+      ));
+
+      // Set timezone for both start and end times
+      EventDateTime startEventDateTime = new EventDateTime()
+              .setDateTime(start)
+              .setTimeZone(ZoneId.systemDefault().getId());
+
+      EventDateTime endEventDateTime = new EventDateTime()
+              .setDateTime(end)
+              .setTimeZone(ZoneId.systemDefault().getId());
+
+      googleEvent.setStart(startEventDateTime)
+              .setEnd(endEventDateTime);
+
       service.events().insert(calendar.getCalendarId(), googleEvent).execute();
       return true;
     } catch (IOException e) {
@@ -153,48 +153,38 @@ public class GoogleCalendarDataAccessObject implements GetEventsDataAccessInterf
     }
   }
 
-  private Event createGoogleEvent(entity.Event event) {
-    Event googleEvent = new Event()
-      .setSummary(event.getEventName());
-
-    // Set event date and time
-    LocalDateTime startDateTime = event.getDate().atStartOfDay();
-    LocalDateTime endDateTime = startDateTime.plusHours(1); // Default 1-hour duration
-
-    // Convert to Google DateTime format
-    DateTime start = new DateTime(
-      Date.from(startDateTime.atZone(ZoneId.systemDefault()).toInstant())
-    );
-    DateTime end = new DateTime(
-      Date.from(endDateTime.atZone(ZoneId.systemDefault()).toInstant())
-    );
-
-    // Create EventDateTime objects
-    EventDateTime startEventDateTime = new EventDateTime().setDateTime(start);
-    EventDateTime endEventDateTime = new EventDateTime().setDateTime(end);
-
-    // Set the start and end times
-    googleEvent.setStart(startEventDateTime)
-      .setEnd(endEventDateTime);
-
-    return googleEvent;
-  }
-
   @Override
   public boolean deleteEvent(entity.Event event) {
     try {
-      // First, we need to find the Google Calendar event ID
-      Events events = service.events().list(calendar.getCalendarId())
-        .setTimeMin(new DateTime(Date.from(event.getDate().atStartOfDay().atZone(ZoneId.systemDefault()).toInstant())))
-        .setTimeMax(new DateTime(Date.from(event.getDate().plusDays(1).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant())))
-        .setOrderBy("startTime")
-        .setSingleEvents(true)
-        .execute();
+      // Find events on the given date
+      LocalDateTime startOfDay = event.getDate().atStartOfDay();
+      LocalDateTime endOfDay = event.getDate().plusDays(1).atStartOfDay();
 
+      DateTime startTime = new DateTime(Date.from(startOfDay.atZone(ZoneId.systemDefault()).toInstant()));
+      DateTime endTime = new DateTime(Date.from(endOfDay.atZone(ZoneId.systemDefault()).toInstant()));
+
+      Events events = service.events().list(calendar.getCalendarId())
+              .setTimeMin(startTime)
+              .setTimeMax(endTime)
+              .setOrderBy("startTime")
+              .setSingleEvents(true)
+              .execute();
+
+      // Find the matching event
       for (Event googleEvent : events.getItems()) {
         if (googleEvent.getSummary().equals(event.getEventName())) {
-          service.events().delete(calendar.getCalendarId(), googleEvent.getId()).execute();
-          return true;
+          // Additional check for time match if needed
+          EventDateTime eventStart = googleEvent.getStart();
+          if (eventStart.getDateTime() != null) {
+            LocalTime eventTime = Instant.ofEpochMilli(eventStart.getDateTime().getValue())
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalTime();
+
+            if (eventTime.equals(event.getStartTime())) {
+              service.events().delete(calendar.getCalendarId(), googleEvent.getId()).execute();
+              return true;
+            }
+          }
         }
       }
       return false;

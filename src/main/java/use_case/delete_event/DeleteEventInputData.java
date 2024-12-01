@@ -1,4 +1,3 @@
-// Now let's create the Input Data class
 package use_case.delete_event;
 
 import entity.Event;

@@ -16,19 +16,22 @@ public class DeleteEventPresenter implements DeleteEventOutputBoundary {
 
   @Override
   public void prepareSuccessView(DeleteEventOutputData outputData) {
-    // Update the current state
-    DeleteEventState state = deleteEventViewModel.getState();
-    state.setEventName(outputData.getEvent().getEventName());
-    deleteEventViewModel.setState(state);
+    // Update both view models
+    dayViewModel.removeEvent(outputData.getEvent());
+    dayViewModel.firePropertyChanged();
 
-    // Notify view of successful deletion
+    DeleteEventState state = new DeleteEventState();
+    state.setSelectedEvent(null);
+    state.setUseCaseFailed(false);
+    deleteEventViewModel.setState(state);
     deleteEventViewModel.firePropertyChanged();
   }
 
   @Override
   public void prepareFailView(String error) {
-    DeleteEventState state = deleteEventViewModel.getState();
-    state.setErrorMessage(error);
+    DeleteEventState state = new DeleteEventState();
+    state.setError(error);
+    state.setUseCaseFailed(true);
     deleteEventViewModel.setState(state);
     deleteEventViewModel.firePropertyChanged();
   }

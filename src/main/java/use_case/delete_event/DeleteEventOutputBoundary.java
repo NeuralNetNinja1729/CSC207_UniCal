@@ -3,9 +3,9 @@ package use_case.delete_event;
 public interface DeleteEventOutputBoundary {
   /**
    * Prepares the success view for the Delete Event Use Case.
-   * @param outputData the output data
+   * @param deleteEventOutputData the output data
    */
-  void prepareSuccessView(DeleteEventOutputData outputData);
+  void prepareSuccessView(DeleteEventOutputData deleteEventOutputData);
 
   /**
    * Prepares the failure view for the Delete Event Use Case.

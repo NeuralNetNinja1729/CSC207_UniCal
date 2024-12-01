@@ -12,7 +12,7 @@ public class DeleteEventController {
   }
 
   public void execute(Event event) {
-    final DeleteEventInputData deleteEventInputData = new DeleteEventInputData(event);
+    DeleteEventInputData deleteEventInputData = new DeleteEventInputData(event);
     deleteEventUseCaseInteractor.execute(deleteEventInputData);
   }
 }

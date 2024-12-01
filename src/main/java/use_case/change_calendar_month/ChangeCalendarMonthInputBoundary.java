@@ -6,7 +6,7 @@ package use_case.change_calendar_month;
 public interface ChangeCalendarMonthInputBoundary {
     /**
      * Executes the login use case.
-     * @param inputData the input data
+     * @param changeCalendarMonthInputData the input data
      */
-    void execute(ChangeCalendarMonthInputData inputData);
+        void execute(ChangeCalendarMonthInputData changeCalendarMonthInputData);
 }

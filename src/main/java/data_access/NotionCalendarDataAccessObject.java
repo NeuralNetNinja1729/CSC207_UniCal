@@ -12,17 +12,16 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
-/**
- * Data Access Object for Notion Calendar.
- */
 public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterface, AddEventDataAccessInterface {
-
     private static final String DATE_PROPERTY_NAME = "Due Date";
+    private static final String START_TIME_PROPERTY_NAME = "Start Time";
+    private static final String END_TIME_PROPERTY_NAME = "End Time";
     private static final String DATE = "date";
     private static final String PROPERTY = "property";
     private static final String TYPE = "type";
@@ -37,58 +36,116 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
 
     @Override
     public ArrayList<Event> fetchEventsDay(LocalDate date) {
-        // Prepare request Data
         final JSONObject requestData = createRequestDataDay(date);
         return fetchEvents(requestData);
     }
 
     @Override
     public ArrayList<Event> fetchEventsMonth(LocalDate date) {
-        // Prepare request Data
         final JSONObject requestData = createRequestDataMonth(date);
         return fetchEvents(requestData);
     }
 
     private ArrayList<Event> fetchEvents(JSONObject requestData) {
-    final ArrayList<Event> events = new ArrayList<>();
-    try {
-      // Prepare request details
-      final String notionApiKey = calendar.getNotionToken();
-      final String dbId = calendar.getDatabaseID();
-      final HttpURLConnection connection = createConnection(notionApiKey, dbId);
+        final ArrayList<Event> events = new ArrayList<>();
+        try {
+            final String notionApiKey = calendar.getNotionToken();
+            final String dbId = calendar.getDatabaseID();
+            final HttpURLConnection connection = createConnection(notionApiKey, dbId);
 
-      sendRequest(connection, requestData);
+            sendRequest(connection, requestData);
 
-      // Handle the response
-      final int responseCode = connection.getResponseCode();
-      if (responseCode == HttpURLConnection.HTTP_OK) {
-        final String response = getResponse(connection);
-        parseEventsFromResponse(response, events, calendar);
-      } else {
-        // Enhanced error logging
-        String errorResponse = "";
-        try (BufferedReader reader = new BufferedReader(
-          new InputStreamReader(connection.getErrorStream()))) {
-          String line;
-          StringBuilder responseBuilder = new StringBuilder();
-          while ((line = reader.readLine()) != null) {
-            responseBuilder.append(line);
-          }
-          errorResponse = responseBuilder.toString();
-        } catch (Exception e) {
-          errorResponse = "Could not read error response";
+            final int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                final String response = getResponse(connection);
+                parseEventsFromResponse(response, events, calendar);
+            } else {
+                String errorResponse = "";
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(connection.getErrorStream()))) {
+                    String line;
+                    StringBuilder responseBuilder = new StringBuilder();
+                    while ((line = reader.readLine()) != null) {
+                        responseBuilder.append(line);
+                    }
+                    errorResponse = responseBuilder.toString();
+                } catch (Exception e) {
+                    errorResponse = "Could not read error response";
+                }
+                System.err.println("Failed to fetch events. Response code: " + responseCode);
+                System.err.println("Error response: " + errorResponse);
+            }
+        } catch (Exception exception) {
+            System.err.println("Error fetching Notion events: " + exception.getMessage());
+            exception.printStackTrace();
         }
-        System.err.println("Failed to fetch events. Response code: " + responseCode);
-        System.err.println("Error response: " + errorResponse);
-      }
-    } catch (Exception exception) {
-      System.err.println("Error fetching Notion events: " + exception.getMessage());
-      exception.printStackTrace();
+        return events;
     }
-    return events;
-  }
 
-    private HttpURLConnection createConnection(String notionApiKey, String dbId) throws Exception {
+    private void parseEventsFromResponse(String response, ArrayList<Event> events, Calendar calendarApi) {
+        try {
+            final JSONObject res = new JSONObject(response);
+            final JSONArray results = res.getJSONArray("results");
+
+            for (int i = 0; i < results.length(); i++) {
+                try {
+                    final JSONObject result = results.getJSONObject(i);
+                    final JSONObject properties = result.getJSONObject("properties");
+
+                    // Get event name from title property
+                    final String eventName = properties.getJSONObject("Name")
+                            .getJSONArray(TITLE)
+                            .getJSONObject(0)
+                            .getString("plain_text");
+
+                    // Get date from date property
+                    final JSONObject dueDateProperty = properties.getJSONObject(DATE_PROPERTY_NAME);
+                    if (!dueDateProperty.has(DATE) || dueDateProperty.getJSONObject(DATE).isNull("start")) {
+                        continue; // Skip events with invalid dates
+                    }
+
+                    final String dateString = dueDateProperty.getJSONObject(DATE).getString("start");
+                    LocalDate date = LocalDate.parse(dateString.split("T")[0]); // Handle both date-only and datetime formats
+
+                    // Parse start time
+                    LocalTime startTime = LocalTime.of(0, 0);
+                    if (properties.has(START_TIME_PROPERTY_NAME)) {
+                        JSONObject startTimeProperty = properties.getJSONObject(START_TIME_PROPERTY_NAME);
+                        if (startTimeProperty.has("rich_text") && !startTimeProperty.getJSONArray("rich_text").isEmpty()) {
+                            String startTimeStr = startTimeProperty.getJSONArray("rich_text")
+                                    .getJSONObject(0)
+                                    .getJSONObject("text")
+                                    .getString("content");
+                            startTime = LocalTime.parse(startTimeStr, DateTimeFormatter.ofPattern("HH:mm"));
+                        }
+                    }
+
+                    // Parse end time
+                    LocalTime endTime = LocalTime.of(23, 59);
+                    if (properties.has(END_TIME_PROPERTY_NAME)) {
+                        JSONObject endTimeProperty = properties.getJSONObject(END_TIME_PROPERTY_NAME);
+                        if (endTimeProperty.has("rich_text") && !endTimeProperty.getJSONArray("rich_text").isEmpty()) {
+                            String endTimeStr = endTimeProperty.getJSONArray("rich_text")
+                                    .getJSONObject(0)
+                                    .getJSONObject("text")
+                                    .getString("content");
+                            endTime = LocalTime.parse(endTimeStr, DateTimeFormatter.ofPattern("HH:mm"));
+                        }
+                    }
+
+                    events.add(new Event(eventName, date, startTime, endTime, calendarApi));
+                } catch (Exception e) {
+                    System.err.println("Error parsing individual event: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing events response: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private HttpURLConnection createConnection(String notionApiKey, String dbId) throws IOException {
         final String urlString = NOTION_API_BASE_URL + "/databases/" + dbId + "/query";
         final URL url = new URL(urlString);
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -103,8 +160,6 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
     }
 
     private JSONObject createRequestDataMonth(LocalDate date) {
-
-        // Get the start and end of the month
         final String startOfMonth = DateUtils.getStartOfMonth(date);
         final String endOfMonth = DateUtils.getEndOfMonth(date);
 
@@ -130,13 +185,12 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
     }
 
     private JSONObject createRequestDataDay(LocalDate date) {
-
         final String dateString = DateUtils.getDateString(date);
 
         final JSONObject filter = new JSONObject();
         filter.put(PROPERTY, DATE_PROPERTY_NAME)
-                        .put(DATE, new JSONObject()
-                                .put("equals", dateString));
+                .put(DATE, new JSONObject()
+                        .put("equals", dateString));
 
         final JSONObject requestData = new JSONObject();
         requestData.put("filter", filter);
@@ -144,14 +198,41 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
         return requestData;
     }
 
-    private void sendRequest(HttpURLConnection connection, JSONObject requestData) throws Exception {
+    @Override
+    public boolean addEvent(Event event) {
+        try {
+            final String notionApiKey = calendar.getNotionToken();
+            final String dbId = calendar.getDatabaseID();
+
+            final JSONObject eventData = createAddEventRequestData(dbId, event);
+
+            final HttpURLConnection connection = createAddEventConnection(notionApiKey);
+
+            sendRequest(connection, eventData);
+
+            final int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                return true;
+            } else {
+                System.out.println("Failed to add event. Response code: " + responseCode);
+                return false;
+            }
+        } catch (Exception exception) {
+            System.err.println("Error adding event: " + exception.getMessage());
+            exception.printStackTrace();
+            return false;
+        }
+    }
+
+    private void sendRequest(HttpURLConnection connection, JSONObject requestData) throws IOException {
         try (DataOutputStream out = new DataOutputStream(connection.getOutputStream())) {
             out.writeBytes(requestData.toString());
             out.flush();
         }
     }
 
-    private String getResponse(HttpURLConnection connection) throws Exception {
+    private String getResponse(HttpURLConnection connection) throws IOException {
         final StringBuilder response = new StringBuilder();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
             String inputLine;
@@ -162,106 +243,63 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
         return response.toString();
     }
 
-    private void parseEventsFromResponse(String response, ArrayList<Event> events, Calendar calendarApi) {
-        final JSONObject res = new JSONObject(response);
-        final JSONArray results = res.getJSONArray("results");
-
-        for (int i = 0; i < results.length(); i++) {
-            final JSONObject result = results.getJSONObject(i);
-            final JSONObject properties = result.getJSONObject("properties");
-
-            final String eventName = properties.getJSONObject("Name")
-                    .getJSONArray(TITLE)
-                    .getJSONObject(0)
-                    .getString("plain_text");
-
-            final String dateString = properties.getJSONObject(DATE_PROPERTY_NAME)
-                    .getJSONObject("date")
-                    .getString("start");
-
-            final LocalDate date = LocalDate.parse(dateString);
-
-            events.add(new Event(eventName, date, calendarApi));
-        }
-    }
-
-    @Override
-    public boolean addEvent(Event event) {
-        boolean result = false;
-        try {
-            // Get Notion API key and Database ID from the calendar object
-            final String notionApiKey = calendar.getNotionToken();
-            final String dbId = calendar.getDatabaseID();
-
-            final JSONObject eventData = createAddEventRequestData(dbId, event);
-
-            // Create a connection to the Notion API
-            final HttpURLConnection connection = createAddEventConnection(notionApiKey);
-
-            // Send the request data
-            sendRequest(connection, eventData);
-
-            // Get the response code
-            final int responseCode = connection.getResponseCode();
-
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                result = true;
-            }
-            else {
-                System.out.println("Failed to add event. Response code: " + responseCode);
-            }
-        }
-        catch (Exception exception) {
-            System.err.println("Error adding event: " + exception.getMessage());
-            exception.printStackTrace();
-        }
-        return result;
-    }
-
     private JSONObject createAddEventRequestData(String dbId, Event event) {
-        // Create the event data in JSON format for the Notion API
         final JSONObject eventData = new JSONObject();
 
-        // Specify the parent database ID
+        // Parent database ID
         final JSONObject parent = new JSONObject();
         parent.put(TYPE, "database_id");
         parent.put("database_id", dbId);
         eventData.put("parent", parent);
 
-        // Specify the event properties (for example, event name and date)
+        // Properties object
         final JSONObject properties = new JSONObject();
 
-        // Event name
-        final JSONObject eventNameProperty = new JSONObject();
-        eventNameProperty.put(TYPE, TITLE);
-        final JSONArray titleArray = new JSONArray();
-        final JSONObject titleText = new JSONObject();
+        // Event name (Title)
+        final JSONObject titleProperty = new JSONObject();
+        titleProperty.put(TYPE, TITLE);
+        JSONArray titleArray = new JSONArray();
+        JSONObject titleText = new JSONObject();
         titleText.put(TYPE, "text");
         titleText.put("text", new JSONObject().put("content", event.getEventName()));
         titleArray.put(titleText);
-        eventNameProperty.put(TITLE, titleArray);
+        titleProperty.put(TITLE, titleArray);
+        properties.put("Name", titleProperty);
 
-        // Add event name property
-        properties.put("Name", eventNameProperty);
-
-        // Event date (assuming you want to use "Due Date" as the date)
+        // Date property
         final JSONObject dateProperty = new JSONObject();
         dateProperty.put(TYPE, DATE);
-        final JSONObject dateDetails = new JSONObject();
-        final LocalDate date = event.getDate();
-        dateDetails.put("start", DateUtils.getDateString(date));
-        dateProperty.put(DATE, dateDetails);
-
-        // Add date property
+        dateProperty.put(DATE, new JSONObject().put("start", event.getDate().toString()));
         properties.put(DATE_PROPERTY_NAME, dateProperty);
 
-        // Add properties to the event data
+        // Start Time property
+        final JSONObject startTimeProperty = new JSONObject();
+        startTimeProperty.put(TYPE, "rich_text");
+        JSONArray startTimeArray = new JSONArray();
+        JSONObject startTimeText = new JSONObject();
+        startTimeText.put(TYPE, "text");
+        startTimeText.put("text", new JSONObject().put("content", event.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"))));
+        startTimeArray.put(startTimeText);
+        startTimeProperty.put("rich_text", startTimeArray);
+        properties.put(START_TIME_PROPERTY_NAME, startTimeProperty);
+
+        // End Time property
+        final JSONObject endTimeProperty = new JSONObject();
+        endTimeProperty.put(TYPE, "rich_text");
+        JSONArray endTimeArray = new JSONArray();
+        JSONObject endTimeText = new JSONObject();
+        endTimeText.put(TYPE, "text");
+        endTimeText.put("text", new JSONObject().put("content", event.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm"))));
+        endTimeArray.put(endTimeText);
+        endTimeProperty.put("rich_text", endTimeArray);
+        properties.put(END_TIME_PROPERTY_NAME, endTimeProperty);
+
         eventData.put("properties", properties);
 
         return eventData;
     }
 
-    private HttpURLConnection createAddEventConnection(String notionApiKey) throws Exception {
+    private HttpURLConnection createAddEventConnection(String notionApiKey) throws IOException {
         final URL url = new URL(NOTION_API_BASE_URL + "/pages");
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
@@ -273,5 +311,4 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
 
         return connection;
     }
-
 }

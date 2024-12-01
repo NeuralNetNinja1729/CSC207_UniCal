@@ -1,12 +1,9 @@
-// Second, ChangeCalendarDayPresenter.java
 package interface_adapter.change_calendar_day;
 
-import entity.Calendar;
 import use_case.change_calendar_day.ChangeCalendarDayOutputBoundary;
 import use_case.change_calendar_day.ChangeCalendarDayOutputData;
 import entity.Event;
-
-import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public class ChangeCalendarDayPresenter implements ChangeCalendarDayOutputBoundary {
@@ -18,27 +15,28 @@ public class ChangeCalendarDayPresenter implements ChangeCalendarDayOutputBounda
 
   @Override
   public void prepareSuccessView(ChangeCalendarDayOutputData outputData) {
-    // Get current state and update it
-    ChangeCalendarDayState state = changeCalendarDayViewModel.getState();
-
-    // Update the state with new data
+    ChangeCalendarDayState state = new ChangeCalendarDayState();
     state.setCalendarList(outputData.getCalendarList());
     state.setEventList(outputData.getEventList());
+    state.setUseCaseFailed(false);
+    state.setError("");
 
-    // Sort events by time if needed
+    // Sort events by time
     sortEvents(state.getEventList());
 
-    // Update the view model
     changeCalendarDayViewModel.setState(state);
-
-    // Notify observers of the change
     changeCalendarDayViewModel.firePropertyChanged();
   }
 
-  /**
-   * Helper method to sort events by time
-   * @param events list of events to sort
-   */
+  @Override
+  public void prepareFailView(String error) {
+    ChangeCalendarDayState state = new ChangeCalendarDayState();
+    state.setError(error);
+    state.setUseCaseFailed(true);
+    changeCalendarDayViewModel.setState(state);
+    changeCalendarDayViewModel.firePropertyChanged();
+  }
+
   private void sortEvents(List<Event> events) {
     events.sort((e1, e2) -> {
       // First compare by date
@@ -46,52 +44,23 @@ public class ChangeCalendarDayPresenter implements ChangeCalendarDayOutputBounda
       if (dateCompare != 0) {
         return dateCompare;
       }
-      // If dates are equal, compare by name
+
+      // If dates are equal, compare by start time
+      LocalTime time1 = e1.getStartTime();
+      LocalTime time2 = e2.getStartTime();
+      int timeCompare = time1.compareTo(time2);
+      if (timeCompare != 0) {
+        return timeCompare;
+      }
+
+      // If start times are equal, compare by end time
+      int endTimeCompare = e1.getEndTime().compareTo(e2.getEndTime());
+      if (endTimeCompare != 0) {
+        return endTimeCompare;
+      }
+
+      // If all times are equal, sort by event name
       return e1.getEventName().compareTo(e2.getEventName());
     });
-  }
-
-  /**
-   * Updates the view with the events for a specific date
-   * @param date the date to show events for
-   */
-  public void updateViewForDate(LocalDate date) {
-    ChangeCalendarDayState state = changeCalendarDayViewModel.getState();
-    state.setDate(date);
-    changeCalendarDayViewModel.setState(state);
-    changeCalendarDayViewModel.firePropertyChanged();
-  }
-
-  /**
-   * Updates the view with a new list of calendars
-   * @param calendars the new list of calendars
-   */
-  public void updateCalendarList(List<Calendar> calendars) {
-    ChangeCalendarDayState state = changeCalendarDayViewModel.getState();
-    state.setCalendarList(calendars);
-    changeCalendarDayViewModel.setState(state);
-    changeCalendarDayViewModel.firePropertyChanged();
-  }
-
-  /**
-   * Updates the view with new events
-   * @param events the new list of events
-   */
-  public void updateEvents(List<Event> events) {
-    ChangeCalendarDayState state = changeCalendarDayViewModel.getState();
-    state.setEventList(events);
-    sortEvents(state.getEventList());
-    changeCalendarDayViewModel.setState(state);
-    changeCalendarDayViewModel.firePropertyChanged();
-  }
-
-  /**
-   * Clears all events from the view
-   */
-  public void clearEvents() {
-    ChangeCalendarDayState state = changeCalendarDayViewModel.getState();
-    state.getEventList().clear();
-    changeCalendarDayViewModel.setState(state);
-    changeCalendarDayViewModel.firePropertyChanged();
   }
 }

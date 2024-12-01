@@ -8,6 +8,8 @@ import interface_adapter.change_calendar_month.ChangeCalendarMonthViewModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
@@ -19,15 +21,20 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.List;
 
-public class ChangeCalendarMonthView extends JPanel implements PropertyChangeListener {
-  private final JPanel calendarPanel;
-  private final JComboBox<Month> monthSelector;
-  private final JComboBox<Integer> yearSelector;
-  private final JButton googleButton;
-  private final JButton notionButton;
-  private final JButton outlookButton;
+public class ChangeCalendarMonthView extends JPanel implements ActionListener, PropertyChangeListener {
+  public final String viewName = "calendar_month";
   private final ChangeCalendarMonthViewModel changeCalendarMonthViewModel;
-  private ChangeCalendarMonthController changeCalendarMonthController;
+  private ChangeCalendarMonthController controller;
+
+  // UI Components
+  private JPanel calendarPanel = new JPanel(new GridLayout(0, 7, 2, 2));
+  private final JComboBox<Month> monthSelector = new JComboBox<>(Month.values());
+  private final JComboBox<Integer> yearSelector = new JComboBox<>();
+  private final JButton googleButton = new JButton(ChangeCalendarMonthViewModel.GOOGLE_CALENDAR_BUTTON_LABEL);
+  private final JButton notionButton = new JButton(ChangeCalendarMonthViewModel.NOTION_CALENDAR_BUTTON_LABEL);
+  private final JButton outlookButton = new JButton(ChangeCalendarMonthViewModel.OUTLOOK_CALENDAR_BUTTON_LABEL);
+  private final JLabel errorLabel;
+
   private DayViewOpener dayViewOpener;
   private static final Color ACTIVE_CALENDAR_COLOR = new Color(200, 200, 255);
   private static final int CELL_HEIGHT = 100;
@@ -45,71 +52,33 @@ public class ChangeCalendarMonthView extends JPanel implements PropertyChangeLis
     this.changeCalendarMonthViewModel = viewModel;
     this.changeCalendarMonthViewModel.addPropertyChangeListener(this);
 
+    // Layout setup
     setLayout(new BorderLayout());
 
-    // Create side panel for calendar selection
-    JPanel sidePanel = new JPanel();
-    sidePanel.setLayout(new GridLayout(5, 1, 10, 10));
-    sidePanel.setPreferredSize(new Dimension(200, 0));
-    sidePanel.setBackground(new Color(68, 168, 167));
+    // Create error label
+    errorLabel = new JLabel();
+    errorLabel.setForeground(Color.RED);
+    errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-    googleButton = new JButton("Google Calendar");
-    notionButton = new JButton("Notion Calendar");
-    outlookButton = new JButton("Outlook Calendar");
-
-    googleButton.addActionListener(e -> handleGoogleCalendarClick());
-    notionButton.addActionListener(e -> handleNotionCalendarClick());
-    outlookButton.addActionListener(e -> handleOutlookCalendarClick());
-
-    sidePanel.add(googleButton);
-    sidePanel.add(notionButton);
-    sidePanel.add(outlookButton);
+    // Create calendar selection panel
+    JPanel sidePanel = createSidePanel();
     add(sidePanel, BorderLayout.WEST);
 
-    // Create top panel for month/year selection
-    JPanel topPanel = new JPanel(new FlowLayout());
-    monthSelector = new JComboBox<>(Month.values());
-    yearSelector = new JComboBox<>();
-    for (int year = 2020; year <= 2030; year++) {
-      yearSelector.addItem(year);
-    }
-
-    // Set current month and year
-    LocalDate now = LocalDate.now();
-    monthSelector.setSelectedItem(now.getMonth());
-    yearSelector.setSelectedItem(now.getYear());
-
-    monthSelector.addActionListener(e -> handleMonthYearChange());
-    yearSelector.addActionListener(e -> handleMonthYearChange());
-
-    topPanel.add(new JLabel("Month:"));
-    topPanel.add(monthSelector);
-    topPanel.add(new JLabel("Year:"));
-    topPanel.add(yearSelector);
+    // Create month/year selection panel
+    JPanel topPanel = createTopPanel();
     add(topPanel, BorderLayout.NORTH);
 
     // Create calendar panel
     calendarPanel = new JPanel(new GridLayout(0, 7, 2, 2));
     calendarPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-    add(new JScrollPane(calendarPanel), BorderLayout.CENTER);
+
+    // Create a wrapper panel that includes error label and calendar
+    JPanel centerPanel = new JPanel(new BorderLayout());
+    centerPanel.add(errorLabel, BorderLayout.NORTH);
+    centerPanel.add(new JScrollPane(calendarPanel), BorderLayout.CENTER);
+    add(centerPanel, BorderLayout.CENTER);
 
     updateCalendarView();
-  }
-
-  private void handleMonthYearChange() {
-    ChangeCalendarMonthState currentState = changeCalendarMonthViewModel.getState();
-    if (currentState != null && currentState.getActiveCalendar() != null) {
-      Month selectedMonth = (Month) monthSelector.getSelectedItem();
-      Integer selectedYear = (Integer) yearSelector.getSelectedItem();
-      String monthName = selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault());
-
-      List<Calendar> calList = new ArrayList<>();
-      calList.add(currentState.getActiveCalendar());
-
-      currentState.setCurrMonth(monthName);
-      currentState.setCurrYear(selectedYear);
-      changeCalendarMonthController.execute(calList, monthName, selectedYear);
-    }
   }
 
   private void updateCalendarView() {
@@ -201,6 +170,7 @@ public class ChangeCalendarMonthView extends JPanel implements PropertyChangeLis
       @Override
       public void mouseClicked(MouseEvent e) {
         if (dayViewOpener != null) {
+          System.out.println("Day clicked: " + date); // Debug print
           dayViewOpener.openDayView(date);
         }
       }
@@ -213,7 +183,7 @@ public class ChangeCalendarMonthView extends JPanel implements PropertyChangeLis
       @Override
       public void mouseExited(MouseEvent e) {
         cellPanel.setBackground(events != null && !events.isEmpty() ?
-          new Color(255, 245, 245) : Color.WHITE);
+                new Color(255, 245, 245) : Color.WHITE);
       }
     });
 
@@ -239,46 +209,6 @@ public class ChangeCalendarMonthView extends JPanel implements PropertyChangeLis
     return eventMap;
   }
 
-  private void handleCalendarClick(Calendar calendar, String calendarType) {
-    if (calendar != null) {
-      ChangeCalendarMonthState currentState = changeCalendarMonthViewModel.getState();
-      currentState.setActiveCalendar(calendar);
-      List<Calendar> calList = new ArrayList<>();
-      calList.add(calendar);
-      currentState.setCurrCalendarList(calList);
-
-      Month selectedMonth = (Month) monthSelector.getSelectedItem();
-      Integer selectedYear = (Integer) yearSelector.getSelectedItem();
-      String monthName = selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault());
-
-      currentState.setCurrMonth(monthName);
-      currentState.setCurrYear(selectedYear);
-
-      updateButtonColors(calendar);
-      changeCalendarMonthController.execute(calList, monthName, selectedYear);
-    } else {
-      JOptionPane.showMessageDialog(this,
-        calendarType + " Calendar not initialized",
-        "Error",
-        JOptionPane.ERROR_MESSAGE);
-    }
-  }
-
-  private void handleGoogleCalendarClick() {
-    ChangeCalendarMonthState currentState = changeCalendarMonthViewModel.getState();
-    handleCalendarClick(currentState.getGoogleCalendar(), "Google");
-  }
-
-  private void handleNotionCalendarClick() {
-    ChangeCalendarMonthState currentState = changeCalendarMonthViewModel.getState();
-    handleCalendarClick(currentState.getNotionCalendar(), "Notion");
-  }
-
-  private void handleOutlookCalendarClick() {
-    ChangeCalendarMonthState currentState = changeCalendarMonthViewModel.getState();
-    handleCalendarClick(currentState.getOutlookCalendar(), "Outlook");
-  }
-
   private void updateButtonColors(Calendar activeCalendar) {
     googleButton.setBackground(UIManager.getColor("Button.background"));
     notionButton.setBackground(UIManager.getColor("Button.background"));
@@ -299,18 +229,116 @@ public class ChangeCalendarMonthView extends JPanel implements PropertyChangeLis
     }
   }
 
+  private JPanel createSidePanel() {
+    JPanel sidePanel = new JPanel();
+    sidePanel.setLayout(new GridLayout(5, 1, 10, 10));
+    sidePanel.setPreferredSize(new Dimension(200, 0));
+    sidePanel.setBackground(new Color(68, 168, 167));
+
+    // Just add action listeners to the already initialized buttons
+    googleButton.addActionListener(this);
+    notionButton.addActionListener(this);
+    outlookButton.addActionListener(this);
+
+    sidePanel.add(googleButton);
+    sidePanel.add(notionButton);
+    sidePanel.add(outlookButton);
+
+    return sidePanel;
+  }
+
+  private JPanel createTopPanel() {
+    JPanel topPanel = new JPanel(new FlowLayout());
+
+    // Configure the already initialized selectors
+    for (int year = 2020; year <= 2030; year++) {
+      yearSelector.addItem(year);
+    }
+
+    // Set current month and year
+    LocalDate now = LocalDate.now();
+    monthSelector.setSelectedItem(now.getMonth());
+    yearSelector.setSelectedItem(now.getYear());
+
+    monthSelector.addActionListener(this);
+    yearSelector.addActionListener(this);
+
+    topPanel.add(new JLabel(ChangeCalendarMonthViewModel.MONTH_LABEL));
+    topPanel.add(monthSelector);
+    topPanel.add(new JLabel(ChangeCalendarMonthViewModel.YEAR_LABEL));
+    topPanel.add(yearSelector);
+
+    return topPanel;
+  }
+
+  @Override
+  public void actionPerformed(ActionEvent evt) {
+    if (evt.getSource() == googleButton) {
+      handleCalendarClick(changeCalendarMonthViewModel.getState().getGoogleCalendar(), "Google");
+    } else if (evt.getSource() == notionButton) {
+      handleCalendarClick(changeCalendarMonthViewModel.getState().getNotionCalendar(), "Notion");
+    } else if (evt.getSource() == outlookButton) {
+      handleCalendarClick(changeCalendarMonthViewModel.getState().getOutlookCalendar(), "Outlook");
+    } else if (evt.getSource() == monthSelector || evt.getSource() == yearSelector) {
+      handleMonthYearChange();
+    }
+  }
+
+  private void handleMonthYearChange() {
+    ChangeCalendarMonthState currentState = changeCalendarMonthViewModel.getState();
+    if (currentState != null && currentState.getActiveCalendar() != null) {
+      Month selectedMonth = (Month) monthSelector.getSelectedItem();
+      Integer selectedYear = (Integer) yearSelector.getSelectedItem();
+      String monthName = selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault());
+
+      List<Calendar> calList = new ArrayList<>();
+      calList.add(currentState.getActiveCalendar());
+
+      currentState.setCurrMonth(monthName);
+      currentState.setCurrYear(selectedYear);
+      controller.execute(calList, monthName, selectedYear);
+    }
+  }
+
+  private void handleCalendarClick(Calendar calendar, String calendarType) {
+    if (calendar != null) {
+      ChangeCalendarMonthState currentState = changeCalendarMonthViewModel.getState();
+      currentState.setActiveCalendar(calendar);
+
+      List<Calendar> calList = new ArrayList<>();
+      calList.add(calendar);
+
+      Month selectedMonth = (Month) monthSelector.getSelectedItem();
+      Integer selectedYear = (Integer) yearSelector.getSelectedItem();
+      String monthName = selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault());
+
+      currentState.setCurrMonth(monthName);
+      currentState.setCurrYear(selectedYear);
+
+      updateButtonColors(calendar);
+      controller.execute(calList, monthName, selectedYear);
+    } else {
+      errorLabel.setText(calendarType + " Calendar not initialized");
+    }
+  }
+
   @Override
   public void propertyChange(PropertyChangeEvent evt) {
-    if ("state".equals(evt.getPropertyName())) {
+    if (evt.getPropertyName().equals("state")) {
       ChangeCalendarMonthState state = (ChangeCalendarMonthState) evt.getNewValue();
       if (state != null) {
         updateButtonColors(state.getActiveCalendar());
         updateCalendarView();
+        errorLabel.setText(state.getError());
       }
     }
   }
 
-  public void setChangeCalendarMonthController(ChangeCalendarMonthController controller) {
-    this.changeCalendarMonthController = controller;
+  public void setController(ChangeCalendarMonthController controller) {
+    this.controller = controller;
+  }
+
+  public String getViewName() {
+    return viewName;
   }
 }

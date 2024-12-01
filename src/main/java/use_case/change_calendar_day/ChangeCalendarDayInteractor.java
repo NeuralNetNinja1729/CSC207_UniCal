@@ -4,42 +4,39 @@ import data_access.CalendarDataAccessObjectFactory;
 import data_access.GetEventsDataAccessInterface;
 import entity.Calendar;
 import entity.Event;
-import interface_adapter.change_calendar_day.ChangeCalendarDayPresenter;
-
+import java.time.LocalDate;
 import java.util.ArrayList;
 
-/**
- * The Change Day Calendar Interactor.
- */
 public class ChangeCalendarDayInteractor implements ChangeCalendarDayInputBoundary {
-
     private final CalendarDataAccessObjectFactory calendarDataAccessObjectFactory;
-    private final ChangeCalendarDayPresenter changeCalendarDayPresenter;
+    private final ChangeCalendarDayOutputBoundary changeCalendarDayPresenter;
 
-    public ChangeCalendarDayInteractor(CalendarDataAccessObjectFactory calendarDataAccessObjectFactory,
-                                         ChangeCalendarDayPresenter changeCalendarDayPresenter) {
+    public ChangeCalendarDayInteractor(
+            CalendarDataAccessObjectFactory calendarDataAccessObjectFactory,
+            ChangeCalendarDayOutputBoundary changeCalendarDayPresenter) {
         this.calendarDataAccessObjectFactory = calendarDataAccessObjectFactory;
         this.changeCalendarDayPresenter = changeCalendarDayPresenter;
     }
 
     @Override
     public void execute(ChangeCalendarDayInputData inputData) {
+        try {
+            ArrayList<Event> events = new ArrayList<>();
+            ArrayList<Calendar> calendars = inputData.getCalendarList();
 
-        final ArrayList<Event> events = new ArrayList<>();
+            for (Calendar calendar : calendars) {
+                GetEventsDataAccessInterface getEventsDataAccessObject =
+                        (GetEventsDataAccessInterface) calendarDataAccessObjectFactory
+                                .getCalendarDataAccessObject(calendar);
 
-        final ArrayList<Calendar> calendars = inputData.getCalendarList();
-        for (int i = 0; i < calendars.size(); i++) {
+                events.addAll(getEventsDataAccessObject.fetchEventsDay(LocalDate.parse(inputData.getDate())));
+            }
 
-            final GetEventsDataAccessInterface getEventsDataAccessObject =
-                    (GetEventsDataAccessInterface) this.calendarDataAccessObjectFactory
-                            .getCalendarDataAccessObject(calendars.get(i));
-
-            events.addAll(getEventsDataAccessObject.fetchEventsDay(inputData.getDate()));
+            ChangeCalendarDayOutputData outputData = new ChangeCalendarDayOutputData(
+                    calendars, events, false);
+            changeCalendarDayPresenter.prepareSuccessView(outputData);
+        } catch (Exception e) {
+            changeCalendarDayPresenter.prepareFailView("Error fetching calendar data: " + e.getMessage());
         }
-
-        final ChangeCalendarDayOutputData changeCalendarDayOutputData =
-                new ChangeCalendarDayOutputData(calendars, events);
-
-        this.changeCalendarDayPresenter.prepareSuccessView(changeCalendarDayOutputData);
     }
 }
