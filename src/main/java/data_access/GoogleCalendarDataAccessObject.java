@@ -22,7 +22,8 @@ import java.util.Date;
 /**
  * Data Access Object for Google Calendar.
  */
-public class GoogleCalendarDataAccessObject implements GetEventsDataAccessInterface, AddEventDataAccessInterface, DeleteEventDataAccessInterface {
+public class GoogleCalendarDataAccessObject implements GetEventsDataAccessInterface, AddEventDataAccessInterface,
+        DeleteEventDataAccessInterface {
 
   private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
   private static final String APPLICATION_NAME = "UniCal";

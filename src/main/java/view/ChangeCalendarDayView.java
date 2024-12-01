@@ -1,7 +1,7 @@
 package view;
 
+import entity.Calendar;
 import interface_adapter.add_event.AddEventController;
-import interface_adapter.add_event.AddEventState;
 import interface_adapter.change_calendar_day.ChangeCalendarDayController;
 import interface_adapter.change_calendar_day.ChangeCalendarDayState;
 import interface_adapter.change_calendar_day.ChangeCalendarDayViewModel;
@@ -14,11 +14,12 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.Year;
 import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import entity.Event;
+import interface_adapter.delete_event.DeleteEventController;
 
 public class ChangeCalendarDayView extends JPanel implements ActionListener, PropertyChangeListener {
 
@@ -38,6 +39,7 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
     private final ChangeCalendarDayViewModel viewModel;
     private ChangeCalendarDayController controller;
     private AddEventController addEventController;
+    private DeleteEventController deleteEventController;
 
     public ChangeCalendarDayView(ChangeCalendarDayViewModel viewModel) {
         this.viewModel = viewModel;
@@ -156,7 +158,7 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
         Integer selectedYear = (Integer) yearSelector.getSelectedItem();
         if (selectedMonth == null || selectedYear == null) return;
 
-        int daysInMonth = selectedMonth.length(java.time.Year.isLeap(selectedYear));
+        int daysInMonth = selectedMonth.length(Year.isLeap(selectedYear));
         daySelector.removeAllItems();
         for (int day = 1; day <= daysInMonth; day++) {
             daySelector.addItem(day);
@@ -168,14 +170,12 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
     private void updateDayEvents() {
         // Retrieve events from the state
         ChangeCalendarDayState state = viewModel.getState();
-        Map<String, String> eventsByHour = state.getEventMap();
+        List<String> eventsListData = state.getEventList();
 
         DefaultListModel<String> listModel = new DefaultListModel<>();
-        if (eventsByHour != null) {
-            for (Map.Entry<String, String> entry : eventsByHour.entrySet()) {
-                String time = entry.getKey();
-                String eventDetails = entry.getValue();
-                listModel.addElement(time + " - " + eventDetails.trim());
+        if (eventsListData != null && !eventsListData.isEmpty()) {
+            for (String eventDetails : eventsListData) {
+                listModel.addElement(eventDetails.trim());
             }
         } else {
             listModel.addElement("No events for the selected day");
@@ -190,43 +190,10 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
             return;
         }
 
-        // Extract event details from the selected event string
-        String[] parts = selectedEvent.split(" - ", 2);
-        if (parts.length < 2) {
-            JOptionPane.showMessageDialog(frame, "Unable to extract event details.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        String time = parts[0];
-        String eventDetails = parts[1];
-
-        // Extract event name and calendar API name from event details
-        String[] detailsParts = eventDetails.split("\n");
-        if (detailsParts.length < 2) {
-            JOptionPane.showMessageDialog(frame, "Unable to extract event details.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        String eventName = detailsParts[0].trim();
-        String calendarApiName = detailsParts[1].replaceAll("[()]", "").trim();
-
-        // Create an Event object from the extracted details (assuming Event has the necessary constructor)
-        LocalDate selectedDate = LocalDate.of((Integer) yearSelector.getSelectedItem(), (Month) monthSelector.getSelectedItem(), (Integer) daySelector.getSelectedItem());
-        Event eventToDelete;
-        switch (calendarApiName) {
-            case "Google":
-                eventToDelete = new Event(eventName, selectedDate, this.viewModel.getState().getGoogleCalendar());
-                break;
-            case "Notion":
-                eventToDelete = new Event(eventName, selectedDate, this.viewModel.getState().getNotionCalendar());
-                break;
-            case "Outlook":
-                eventToDelete = new Event(eventName, selectedDate, this.viewModel.getState().getOutlookCalendar());
-                break;
-        }
-
-        // TODO: Call the use case to delete the event using the eventToDelete object
-
+        // Remove the event from the state and update the view
+        ChangeCalendarDayState state = viewModel.getState();
+        state.deleteEvent(selectedEvent);
+        updateDayEvents();
     }
 
     private void openAddEventPopup() {
@@ -277,37 +244,15 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
             Integer selectedYear = (Integer) yearDropdown.getSelectedItem();
             Month selectedMonth = (Month) monthDropdown.getSelectedItem();
             Integer selectedDay = (Integer) dayDropdown.getSelectedItem();
-            // String description = descriptionField.getText();
             String selectedCalendar = (String) calendarDropdown.getSelectedItem();
 
             if (!eventName.isEmpty() && selectedYear != null && selectedMonth != null && selectedDay != null) {
-                // Add the event using the controller
-                AddEventState state = new AddEventState();
-                state.setCurrMonth(selectedMonth.getDisplayName(TextStyle.FULL, Locale.getDefault()));
-                state.setCurrYear(selectedYear);
-                state.setCurrDay(selectedDay);
-                switch (selectedCalendar) {
-                    case "Google":
-                        state.setCurrCalendar(this.viewModel.getState().getGoogleCalendar());
-                        break;
-                    case "Notion":
-                        state.setCurrCalendar(this.viewModel.getState().getNotionCalendar());
-                        break;
-                    case "Outlook":
-                        state.setCurrCalendar(this.viewModel.getState().getOutlookCalendar());
-                        break;
-                    default:
-                        break;
-                }
-                LocalDate localDate = LocalDate.of(selectedYear, selectedMonth, selectedDay);
-                state.setEvent(new Event(eventName, localDate, state.getCurrCalendar()));
-
-                // Send data to the controller
-                addEventController.execute(state.getEvent().getEventName(), state.getCurrMonth(), state.getCurrYear(),
-                        state.getCurrDay(), state.getCurrCalendar());
-
-                dialog.dispose();
+                // Add the event to the state
+                String eventDetails = eventName + " (" + selectedCalendar + ")";
+                ChangeCalendarDayState state = viewModel.getState();
+                state.addEvent(eventDetails);
                 updateDayEvents();
+                dialog.dispose();
             } else {
                 JOptionPane.showMessageDialog(dialog, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -342,7 +287,7 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
 
         if (selectedMonth == null || selectedYear == null) return;
 
-        int daysInMonth = selectedMonth.length(java.time.Year.isLeap(selectedYear));
+        int daysInMonth = selectedMonth.length(Year.isLeap(selectedYear));
         dayDropdown.removeAllItems();
         for (int day = 1; day <= daysInMonth; day++) {
             dayDropdown.addItem(day);
@@ -357,7 +302,7 @@ public class ChangeCalendarDayView extends JPanel implements ActionListener, Pro
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         ChangeCalendarDayState state = (ChangeCalendarDayState) evt.getNewValue();
-        if (state.getEventMap() != null) {
+        if (state.getEventList() != null) {
             updateDayEvents();
         }
     }

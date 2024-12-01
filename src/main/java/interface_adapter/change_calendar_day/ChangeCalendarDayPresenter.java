@@ -5,9 +5,8 @@ import interface_adapter.ViewManagerModel;
 import use_case.change_calendar_day.ChangeCalendarDayOutputBoundary;
 import use_case.change_calendar_day.ChangeCalendarDayOutputData;
 
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The Presenter for the Change Day Calendar Use Case.
@@ -25,26 +24,23 @@ public class ChangeCalendarDayPresenter implements ChangeCalendarDayOutputBounda
 
     @Override
     public void prepareSuccessView(ChangeCalendarDayOutputData outputData) {
-        Map<String, String> eventsByHour = new HashMap<>();
+        List<String> eventsList = new ArrayList<>();
 
         // Format the events
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
         for (Event event : outputData.getEventList()) {
-            String time = event.getDate().atTime(event.getStartTime()).format(timeFormatter);
             String eventName = event.getEventName();
             String calendarApiName = event.getCalendarApi().getCalendarApiName(); // Assuming Event has a method getCalendarApiName()
 
-            // Append the event to the hour along with the calendar API name
-            eventsByHour.putIfAbsent(time, "");
-            eventsByHour.put(time, eventsByHour.get(time) + eventName + " (" + calendarApiName + ")\n");
+            // Add the event name and calendar API name to the list
+            eventsList.add(eventName + " (" + calendarApiName + ")");
         }
 
         // Update the view model with formatted data
         ChangeCalendarDayState state = this.viewModel.getState();
         state.setCurrCalendarList(outputData.getCalendarList());
 
-        // Store events as a simplified map for easy UI rendering
-        state.setEventMap(eventsByHour);
+        // Store events as a list for easy UI rendering
+        state.setEventList(eventsList);
 
         // Notify the view model about the state change
         this.viewModel.setState(state);

@@ -7,7 +7,6 @@ import interface_adapter.change_calendar_day.ChangeCalendarDayViewModel;
 import use_case.delete_event.DeleteEventOutputBoundary;
 import use_case.delete_event.DeleteEventOutputData;
 
-import java.time.format.DateTimeFormatter;
 
 public class DeleteEventPresenter implements DeleteEventOutputBoundary {
   private final ChangeCalendarDayViewModel viewModel;
@@ -24,8 +23,6 @@ public class DeleteEventPresenter implements DeleteEventOutputBoundary {
     // Update the current state
     System.out.println("Successfully added event");
     Event event = outputData.getEvent();
-    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-    String time = event.getDate().atTime(event.getStartTime()).format(timeFormatter);
     String eventName = event.getEventName();
     String calendarApiName = event.getCalendarApi().getCalendarApiName();
     ChangeCalendarDayState state = this.viewModel.getState();

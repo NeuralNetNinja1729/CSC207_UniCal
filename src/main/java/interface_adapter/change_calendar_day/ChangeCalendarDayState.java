@@ -3,11 +3,8 @@ package interface_adapter.change_calendar_day;
 import entity.Calendar;
 import entity.User;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ChangeCalendarDayState {
     private User currentUser;
@@ -15,7 +12,7 @@ public class ChangeCalendarDayState {
     private Calendar notionCalendar;
     private Calendar outlookCalendar;
     private List<Calendar> currCalendarList = new ArrayList<>();
-    private Map<String, String> eventMap = new HashMap<>();
+    private List<String> eventList = new ArrayList<>();
     private String currMonth;
     private Integer currYear;
     private Integer currDay;
@@ -60,19 +57,20 @@ public class ChangeCalendarDayState {
         this.currCalendarList = currCalendarList;
     }
 
-    public Map<String, String> getEventMap() {
-        return eventMap;
+    public List<String> getEventList() {
+        return eventList;
     }
 
-    public void setEventMap(Map<String, String> eventMap) {
-        this.eventMap = eventMap;
+    public void setEventList(List<String> eventList) {
+        this.eventList = eventList;
     }
 
-    public void addEvent(String time, String eventDetails) {
-        eventMap.put(time, eventDetails);
+    public void addEvent(String eventDetails) {
+        eventList.add(eventDetails);
     }
+
     public void deleteEvent(String eventDetails) {
-        eventMap.remove(eventDetails);
+        eventList.remove(eventDetails);
     }
 
     public String getCurrMonth() {

@@ -4,6 +4,7 @@ import data_access.CalendarDataAccessObjectFactory;
 import entity.Calendar;
 import entity.Event;
 import entity.NotionCalendar;
+import interface_adapter.ViewManagerModel;
 import interface_adapter.change_calendar_day.ChangeCalendarDayPresenter;
 import interface_adapter.change_calendar_day.ChangeCalendarDayState;
 import interface_adapter.change_calendar_day.ChangeCalendarDayViewModel;
@@ -17,6 +18,7 @@ import static org.junit.Assert.*;
 
 public class ChangeCalendarDayIntegrationTest {
     private ChangeCalendarDayViewModel viewModel;
+    private ViewManagerModel viewManagerModel;
     private ChangeCalendarDayInteractor interactor;
     private Calendar notionCalendar;
     private LocalDate testDate;
@@ -28,9 +30,10 @@ public class ChangeCalendarDayIntegrationTest {
 
         // Create ViewModel
         viewModel = new ChangeCalendarDayViewModel();
+        viewManagerModel = new ViewManagerModel();
 
         // Create Presenter
-        ChangeCalendarDayPresenter presenter = new ChangeCalendarDayPresenter(viewModel);
+        ChangeCalendarDayPresenter presenter = new ChangeCalendarDayPresenter(viewModel, viewManagerModel);
 
         // Create Calendar Factory
         CalendarDataAccessObjectFactory factory = new CalendarDataAccessObjectFactory();
