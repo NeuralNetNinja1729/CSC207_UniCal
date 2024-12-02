@@ -18,7 +18,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
-public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterface, AddEventDataAccessInterface, DeleteEventDataAccessInterface {
+public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterface, AddEventDataAccessInterface, DeleteEventDataAccessInterface, EditEventDataAccessInterface {
     private static final String DATE_PROPERTY_NAME = "Due Date";
     private static final String START_TIME_PROPERTY_NAME = "Start Time";
     private static final String END_TIME_PROPERTY_NAME = "End Time";
@@ -448,5 +448,17 @@ public class NotionCalendarDataAccessObject implements GetEventsDataAccessInterf
             errorResponse = "Could not read error response";
         }
         return errorResponse;
+    }
+
+    @Override
+    public boolean editEvent(Event eventOld, Event eventNew) {
+        try {
+            this.deleteEvent(eventOld);
+            this.addEvent(eventNew);
+        } catch (Exception exception) {
+            System.err.println("Error editing event: " + exception.getMessage());
+            return false;
+        }
+        return true;
     }
 }
